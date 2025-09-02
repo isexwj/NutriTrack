@@ -16,3 +16,14 @@ export default defineConfig({
     },
   },
 })
+
+// export default {
+//   server: {
+//     port: 5173, // 默认是 5173
+//     open: true, // 启动自动打开浏览器
+//     proxy: {
+//       '/api': 'http://localhost:8080'
+//     }
+//   }
+// }
+
