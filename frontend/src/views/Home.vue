@@ -127,9 +127,9 @@ import {
 
 // 导入页面组件
 import Dashboard from './Dashboard.vue'
-import PageOne from './PageOne.vue'
-import PageTwo from './PageTwo.vue'
-import PageThree from './PageThree.vue'
+import MyMeals from './MyMeals.vue'
+import Community from './Community.vue'
+import AIAnalysis from './AIAnalysis.vue'
 import Profile from './Profile.vue'
 
 const router = useRouter()
@@ -192,18 +192,18 @@ const unreadCount = computed(() => {
 
 // 菜单项配置
 const menuItems = [
-  { key: 'dashboard', label: '首页', icon: House },
-  { key: 'page1', label: '第一页', icon: Document },
-  { key: 'page2', label: '第二页', icon: Files },
-  { key: 'page3', label: '第三页', icon: Folder }
+  { key: 'dashboard', label: '首页仪表盘', icon: House },
+  { key: 'myMeals', label: '我的饮食记录', icon: Document },
+  { key: 'community', label: '社区记录', icon: Files },
+  { key: 'aiAnalysis', label: 'AI分析助手', icon: Folder }
 ]
 
 // 组件映射
 const componentMap = {
   dashboard: Dashboard,
-  page1: PageOne,
-  page2: PageTwo,
-  page3: PageThree,
+  myMeals: MyMeals,
+  community: Community,
+  aiAnalysis: AIAnalysis,
   profile: Profile
 }
 

@@ -98,7 +98,16 @@ const handleLogin = async () => {
     if (res.code === 200 && res.data) {
       userStore.setUser(res.data.token, res.data.username)
       ElMessage.success('登录成功')
-      router.push('/home')
+      
+      // 确保localStorage已经更新后再跳转
+      setTimeout(() => {
+        console.log('准备跳转到 /home，当前token:', localStorage.getItem('token'))
+        router.push('/home').then(() => {
+          console.log('路由跳转成功')
+        }).catch((error) => {
+          console.error('路由跳转失败:', error)
+        })
+      }, 100)
     } else {
       ElMessage.error(res.message || '登录失败')
     }
