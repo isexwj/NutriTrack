@@ -1,5 +1,8 @@
 # Java 项目通用忽略
 ## 编译输出
+backend/target/
+backend/.env
+backend/application-prod.properties
 /target/
 *.class
 *.jar
