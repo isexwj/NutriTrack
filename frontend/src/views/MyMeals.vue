@@ -267,6 +267,13 @@ const fetchMeals = async () => {
   try {
     loading.value = true
     const response = await getMealRecords()
+    console.log('=== 获取饮食记录调试信息 ===')
+    console.log('API响应:', response)
+    console.log('响应数据:', response.data)
+    if (response.data && response.data.length > 0) {
+      console.log('第一条记录:', response.data[0])
+      console.log('第一条记录id:', response.data[0].id, '类型:', typeof response.data[0].id)
+    }
     meals.value = response.data
   } catch (error) {
     console.error('获取饮食记录失败:', error)
@@ -281,6 +288,11 @@ const filterMeals = () => {
 }
 
 const editMeal = (meal) => {
+  console.log('=== 编辑记录调试信息 ===')
+  console.log('原始meal对象:', meal)
+  console.log('meal.id:', meal.id, '类型:', typeof meal.id)
+  console.log('meal.mealType:', meal.mealType, '类型:', typeof meal.mealType)
+  
   editingMeal.value = meal
   mealForm.value = {
     mealType: meal.mealType,
@@ -293,6 +305,8 @@ const editMeal = (meal) => {
     })) : [],
     isShared: meal.isShared
   }
+  console.log('设置后的mealForm.mealType:', mealForm.value.mealType)
+  console.log('editingMeal.value.id:', editingMeal.value.id)
   showAddMealDialog.value = true
 }
 
@@ -333,7 +347,10 @@ const saveMeal = async () => {
     saving.value = true
 
     const formData = new FormData()
-    formData.append('mealType', mealForm.value.mealType)
+    // 后端 @ModelAttribute 绑定枚举按常量名匹配，需传递大写常量名
+    const mealTypeEnumNameMap = { breakfast: 'BREAKFAST', lunch: 'LUNCH', dinner: 'DINNER', snack: 'SNACK' }
+    const mealTypeEnumName = mealTypeEnumNameMap[mealForm.value.mealType] || String(mealForm.value.mealType || '').toUpperCase()
+    formData.append('mealType', mealTypeEnumName)
     formData.append('description', mealForm.value.description)
     formData.append('calories', mealForm.value.calories)
     formData.append('rating', mealForm.value.rating)
@@ -347,11 +364,24 @@ const saveMeal = async () => {
     })
 
     if (editingMeal.value) {
-      await updateMealRecord(editingMeal.value.id, formData)
-      ElMessage.success('更新成功')
+      console.log('=== 保存编辑记录调试信息 ===')
+      console.log('editingMeal.value:', editingMeal.value)
+      console.log('editingMeal.value.id:', editingMeal.value.id, '类型:', typeof editingMeal.value.id)
+      console.log('即将调用updateMealRecord，参数id:', editingMeal.value.id)
+      
+      const res = await updateMealRecord(editingMeal.value.id, formData)
+      if (res && res.code === 200) {
+        ElMessage.success('更新成功')
+      } else {
+        ElMessage.error(res?.message || '更新失败')
+      }
     } else {
-      await addMealRecord(formData)
-      ElMessage.success('添加成功')
+      const res = await addMealRecord(formData)
+      if (res && res.code === 200) {
+        ElMessage.success('添加成功')
+      } else {
+        ElMessage.error(res?.message || '添加失败')
+      }
     }
 
     showAddMealDialog.value = false

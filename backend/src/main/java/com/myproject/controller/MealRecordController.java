@@ -109,6 +109,7 @@ public class MealRecordController {
     @PostMapping("/create")
     public ResponseResult<MealRecordVO> createMealRecord(@Validated @ModelAttribute MealRecordCreateDTO createDTO) {
         try {
+            System.out.println("eeeeeeeeeeeeessssssssssssssssssssssssssssssssssssssssssssssss");
             // 从安全上下文中获取当前用户名
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             String username = authentication.getName();
@@ -123,6 +124,7 @@ public class MealRecordController {
             MealRecordVO result = mealRecordService.createMealRecord(createDTO, userId);
             return ResponseResult.success(result);
         } catch (Exception e) {
+            System.out.println("eeeeeeeeeeeeessssssssssssssssssssssssssssssssssssssssssssssss!");
             return ResponseResult.fail("添加饮食记录失败: " + e.getMessage());
         }
     }

@@ -153,8 +153,11 @@ public class MealRecordServiceImpl implements MealRecordService {
     @Transactional
     public MealRecordVO updateMealRecord(Long id, MealRecordUpdateDTO updateDTO, Long userId) {
         MealRecord record = mealRecordMapper.selectById(id);
-        if (record == null || !record.getUserId().equals(userId)) {
-            throw new RuntimeException("记录不存在或无权修改");
+        if (record == null) {
+            throw new RuntimeException("记录不存在");
+        }
+        if (!record.getUserId().equals(userId)) {
+            throw new RuntimeException("无权修改");
         }
 
         // 更新基本字段
