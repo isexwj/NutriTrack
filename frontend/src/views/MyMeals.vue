@@ -259,7 +259,8 @@ const formatTime = (date) => {
 const getFullImageUrl = (url) => {
   if (!url) return ''
   if (url.startsWith('http')) return url
-  return `http://localhost:8080${url}`
+  console.log('url', url)
+  return `http://localhost:8080/images/${url}`
 }
 
 // 获取饮食记录

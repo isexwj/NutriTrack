@@ -39,7 +39,7 @@ public class MealRecordServiceImpl implements MealRecordService {
     private MealImageMapper mealImageMapper;
 
     // 图片存储路径
-    private final String IMAGE_UPLOAD_DIR = "src/main/resources/static/";
+    private final String IMAGE_UPLOAD_DIR = "src/main/resources/static.images/";
 
     @Override
     @Transactional
@@ -67,7 +67,7 @@ public class MealRecordServiceImpl implements MealRecordService {
                 for (MultipartFile image : createDTO.getImages()) {
                     if (!image.isEmpty()) {
                         try {
-                            String imageUrl = saveImage(image, userId, mealRecord.getId(), order);
+                            String imageUrl = saveImage(image, mealRecord.getId(), order);
                             imageUrls.add(imageUrl);
 
                             // 保存图片信息到数据库
@@ -210,7 +210,7 @@ public class MealRecordServiceImpl implements MealRecordService {
             for (MultipartFile image : updateDTO.getNewImages()) {
                 if (!image.isEmpty()) {
                     try {
-                        String imageUrl = saveImage(image, userId, id, order);
+                        String imageUrl = saveImage(image, id, order);
                         newImageUrls.add(imageUrl);
 
                         // 保存图片信息到数据库
@@ -310,7 +310,7 @@ public class MealRecordServiceImpl implements MealRecordService {
     /**
      * 保存图片到本地文件系统
      */
-    private String saveImage(MultipartFile image, Long userId, Long recordId, int order) throws IOException {
+    private String saveImage(MultipartFile image, Long recordId, int order) throws IOException {
         // 确保目录存在
         File directory = new File(IMAGE_UPLOAD_DIR);
         if (!directory.exists()) {
@@ -323,8 +323,8 @@ public class MealRecordServiceImpl implements MealRecordService {
         String fileExtension = originalFilename != null && originalFilename.contains(".") ?
                 originalFilename.substring(originalFilename.lastIndexOf(".")) : ".jpg";
 
-        String filename = String.format("%d_%s_%d_%d%s",
-                userId, dateStr, recordId, order, fileExtension);
+        String filename = String.format("%d_%s_%d_%s",
+                recordId, dateStr, order, fileExtension);
 
         // 保存文件
         Path filePath = Paths.get(IMAGE_UPLOAD_DIR + filename);

@@ -2,7 +2,7 @@ spring:
   datasource:
     url: jdbc:mysql://localhost:3306/nutritrack?useSSL=true&serverTimezone=UTC&characterEncoding=utf8
     username: root
-    password: tiger123456
+    password: 1234
   
   # 允许循环引用（解决Spring Security循环依赖问题）
   main:
@@ -32,3 +32,7 @@ mybatis-plus:
   configuration:
     map-underscore-to-camel-case: true
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+file:
+  # 图片文件夹的绝对路径
+  save-path: D:/大学/研一上/暑期编程实训/暑假编程大作业/NutriTrack/backend/src/main/resources/static/images/
