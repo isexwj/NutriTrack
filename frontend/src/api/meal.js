@@ -3,7 +3,7 @@ import request from '@/utils/request'
 // 获取当前用户的饮食记录
 export function getMealRecords() {
     return request({
-        url: '/meal-records',
+        url: '/meal-records/query_me',
         method: 'get'
     })
 }
