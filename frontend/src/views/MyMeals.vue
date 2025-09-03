@@ -24,23 +24,26 @@
 
     <!-- 饮食记录列表 -->
     <div class="meals-list">
-      <div v-if="filteredMeals.length === 0" class="empty-state">
+      <div v-if="loading" class="loading-state">
+        <el-skeleton :rows="5" animated />
+      </div>
+      <div v-else-if="filteredMeals.length === 0" class="empty-state">
         <el-empty description="暂无饮食记录" :image-size="120">
           <el-button type="primary" @click="showAddMealDialog = true">开始记录</el-button>
         </el-empty>
       </div>
-      
+
       <div v-else class="meals-grid">
-        <div 
-          v-for="meal in filteredMeals" 
-          :key="meal.id"
-          class="meal-card"
+        <div
+            v-for="meal in filteredMeals"
+            :key="meal.id"
+            class="meal-card"
         >
           <div class="meal-header">
             <div class="meal-info">
               <div class="meal-type">
-                <el-tag :type="getMealTypeColor(meal.type)" size="small">
-                  {{ getMealTypeName(meal.type) }}
+                <el-tag :type="getMealTypeColor(meal.mealType)" size="small">
+                  {{ getMealTypeName(meal.mealType) }}
                 </el-tag>
               </div>
               <div class="meal-time">{{ formatTime(meal.createdAt) }}</div>
@@ -54,45 +57,45 @@
               </el-button>
             </div>
           </div>
-          
+
           <div class="meal-content">
             <div class="meal-description">{{ meal.description }}</div>
-            <div v-if="meal.images && meal.images.length > 0" class="meal-images">
+            <div v-if="meal.imageUrls && meal.imageUrls.length > 0" class="meal-images">
               <div class="image-grid">
-                <div 
-                  v-for="(image, index) in meal.images.slice(0, 3)" 
-                  :key="index"
-                  class="meal-image"
-                  @click="previewImage(meal.images, index)"
+                <div
+                    v-for="(image, index) in meal.imageUrls.slice(0, 3)"
+                    :key="index"
+                    class="meal-image"
+                    @click="previewImage(meal.imageUrls, index)"
                 >
-                  <img :src="image" :alt="`餐食图片${index + 1}`" />
+                  <img :src="getFullImageUrl(image)" :alt="`餐食图片${index + 1}`" />
                 </div>
-                <div v-if="meal.images.length > 3" class="more-images">
-                  +{{ meal.images.length - 3 }}
+                <div v-if="meal.imageUrls.length > 3" class="more-images">
+                  +{{ meal.imageUrls.length - 3 }}
                 </div>
               </div>
             </div>
           </div>
-          
+
           <div class="meal-footer">
             <div class="meal-stats">
               <span class="calories">{{ meal.calories }} 卡路里</span>
               <span class="rating">
-                <el-rate 
-                  v-model="meal.rating" 
-                  disabled 
-                  show-score 
-                  text-color="#ff9900"
-                  score-template="{value} 分"
+                <el-rate
+                    v-model="meal.rating"
+                    disabled
+                    show-score
+                    text-color="#ff9900"
+                    score-template="{value} 分"
                 />
               </span>
             </div>
             <div class="meal-share">
               <el-switch
-                v-model="meal.isPublic"
-                active-text="已分享"
-                inactive-text="未分享"
-                @change="toggleShare(meal)"
+                  v-model="meal.isShared"
+                  active-text="已分享"
+                  inactive-text="未分享"
+                  @change="toggleShare(meal)"
               />
             </div>
           </div>
@@ -102,65 +105,65 @@
 
     <!-- 添加/编辑饮食记录对话框 -->
     <el-dialog
-      v-model="showAddMealDialog"
-      :title="editingMeal ? '编辑饮食记录' : '添加饮食记录'"
-      width="600px"
-      @close="resetForm"
+        v-model="showAddMealDialog"
+        :title="editingMeal ? '编辑饮食记录' : '添加饮食记录'"
+        width="600px"
+        @close="resetForm"
     >
       <el-form :model="mealForm" :rules="mealRules" ref="mealFormRef" label-width="80px">
-        <el-form-item label="餐次类型" prop="type">
-          <el-select v-model="mealForm.type" placeholder="请选择餐次">
+        <el-form-item label="餐次类型" prop="mealType">
+          <el-select v-model="mealForm.mealType" placeholder="请选择餐次">
             <el-option label="早餐" value="breakfast" />
             <el-option label="午餐" value="lunch" />
             <el-option label="晚餐" value="dinner" />
           </el-select>
         </el-form-item>
-        
+
         <el-form-item label="描述" prop="description">
           <el-input
-            v-model="mealForm.description"
-            type="textarea"
-            :rows="3"
-            placeholder="请描述您的餐食内容..."
+              v-model="mealForm.description"
+              type="textarea"
+              :rows="3"
+              placeholder="请描述您的餐食内容..."
           />
         </el-form-item>
-        
+
         <el-form-item label="卡路里">
           <el-input-number
-            v-model="mealForm.calories"
-            :min="0"
-            :max="5000"
-            placeholder="估算卡路里"
+              v-model="mealForm.calories"
+              :min="0"
+              :max="5000"
+              placeholder="估算卡路里"
           />
         </el-form-item>
-        
+
         <el-form-item label="评分">
           <el-rate v-model="mealForm.rating" show-text />
         </el-form-item>
-        
+
         <el-form-item label="图片">
           <el-upload
-            v-model:file-list="mealForm.images"
-            action="#"
-            list-type="picture-card"
-            :auto-upload="false"
-            :limit="6"
-            :on-preview="handlePreview"
-            :on-remove="handleRemove"
-            :on-change="handleChange"
+              v-model:file-list="mealForm.images"
+              action="#"
+              list-type="picture-card"
+              :auto-upload="false"
+              :limit="6"
+              :on-preview="handlePreview"
+              :on-remove="handleRemove"
+              :on-change="handleChange"
           >
             <el-icon><Plus /></el-icon>
           </el-upload>
         </el-form-item>
-        
+
         <el-form-item label="分享到社区">
-          <el-switch v-model="mealForm.isPublic" />
+          <el-switch v-model="mealForm.isShared" />
         </el-form-item>
       </el-form>
-      
+
       <template #footer>
         <el-button @click="showAddMealDialog = false">取消</el-button>
-        <el-button type="primary" @click="saveMeal">保存</el-button>
+        <el-button type="primary" @click="saveMeal" :loading="saving">保存</el-button>
       </template>
     </el-dialog>
 
@@ -169,7 +172,7 @@
       <div class="image-preview-container">
         <el-carousel :initial-index="previewIndex" height="400px">
           <el-carousel-item v-for="(image, index) in previewImages" :key="index">
-            <img :src="image" class="preview-image" />
+            <img :src="getFullImageUrl(image)" class="preview-image" />
           </el-carousel-item>
         </el-carousel>
       </div>
@@ -181,6 +184,13 @@
 import { ref, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Edit, Delete } from '@element-plus/icons-vue'
+import {
+  getMealRecords,
+  addMealRecord,
+  updateMealRecord,
+  deleteMealRecord,
+  toggleShareMealRecord
+} from '@/api/meal'
 
 // 响应式数据
 const selectedMealType = ref('all')
@@ -190,82 +200,32 @@ const editingMeal = ref(null)
 const previewImages = ref([])
 const previewIndex = ref(0)
 const mealFormRef = ref()
+const meals = ref([])
+const loading = ref(false)
+const saving = ref(false)
 
 // 表单数据
 const mealForm = ref({
-  type: '',
+  mealType: '',
   description: '',
   calories: 0,
   rating: 5,
   images: [],
-  isPublic: false
+  isShared: false
 })
 
 // 表单验证规则
 const mealRules = {
-  type: [{ required: true, message: '请选择餐次类型', trigger: 'change' }],
+  mealType: [{ required: true, message: '请选择餐次类型', trigger: 'change' }],
   description: [{ required: true, message: '请输入餐食描述', trigger: 'blur' }]
 }
-
-// 模拟数据
-const meals = ref([
-  {
-    id: 1,
-    type: 'breakfast',
-    description: '营养丰富的早餐：全麦面包配鸡蛋，一杯牛奶，还有新鲜的水果沙拉。',
-    calories: 450,
-    rating: 4,
-    images: [
-      'https://images.unsplash.com/photo-1551782450-17144efb9c50?w=300&h=200&fit=crop',
-      'https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=300&h=200&fit=crop'
-    ],
-    isPublic: true,
-    createdAt: new Date('2024-01-15 08:30:00')
-  },
-  {
-    id: 2,
-    type: 'lunch',
-    description: '健康午餐：蒸蛋羹、清炒时蔬、紫菜蛋花汤，营养均衡。',
-    calories: 380,
-    rating: 5,
-    images: [
-      'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=300&h=200&fit=crop'
-    ],
-    isPublic: false,
-    createdAt: new Date('2024-01-15 12:15:00')
-  },
-  {
-    id: 3,
-    type: 'dinner',
-    description: '轻食晚餐：蔬菜沙拉配鸡胸肉，少油少盐，健康美味。',
-    calories: 320,
-    rating: 4,
-    images: [
-      'https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=300&h=200&fit=crop',
-      'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=300&h=200&fit=crop',
-      'https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=300&h=200&fit=crop'
-    ],
-    isPublic: true,
-    createdAt: new Date('2024-01-15 18:45:00')
-  },
-  {
-    id: 4,
-    type: 'breakfast',
-    description: '简单早餐：燕麦粥配坚果，一杯豆浆。',
-    calories: 280,
-    rating: 3,
-    images: [],
-    isPublic: false,
-    createdAt: new Date('2024-01-14 07:20:00')
-  }
-])
 
 // 计算属性
 const filteredMeals = computed(() => {
   if (selectedMealType.value === 'all') {
     return meals.value
   }
-  return meals.value.filter(meal => meal.type === selectedMealType.value)
+  return meals.value.filter(meal => meal.mealType === selectedMealType.value)
 })
 
 // 方法
@@ -296,6 +256,26 @@ const formatTime = (date) => {
   })
 }
 
+const getFullImageUrl = (url) => {
+  if (!url) return ''
+  if (url.startsWith('http')) return url
+  return `http://localhost:8080${url}`
+}
+
+// 获取饮食记录
+const fetchMeals = async () => {
+  try {
+    loading.value = true
+    const response = await getMealRecords()
+    meals.value = response.data
+  } catch (error) {
+    console.error('获取饮食记录失败:', error)
+    ElMessage.error('获取饮食记录失败')
+  } finally {
+    loading.value = false
+  }
+}
+
 const filterMeals = () => {
   // 筛选逻辑已在计算属性中处理
 }
@@ -303,15 +283,15 @@ const filterMeals = () => {
 const editMeal = (meal) => {
   editingMeal.value = meal
   mealForm.value = {
-    type: meal.type,
+    mealType: meal.mealType,
     description: meal.description,
     calories: meal.calories,
     rating: meal.rating,
-    images: meal.images.map((url, index) => ({
+    images: meal.imageUrls ? meal.imageUrls.map((url, index) => ({
       name: `image-${index}.jpg`,
       url: url
-    })),
-    isPublic: meal.isPublic
+    })) : [],
+    isShared: meal.isShared
   }
   showAddMealDialog.value = true
 }
@@ -323,58 +303,76 @@ const deleteMeal = async (mealId) => {
       cancelButtonText: '取消',
       type: 'warning'
     })
-    
-    const index = meals.value.findIndex(meal => meal.id === mealId)
-    if (index > -1) {
-      meals.value.splice(index, 1)
-      ElMessage.success('删除成功')
+
+    await deleteMealRecord(mealId)
+    ElMessage.success('删除成功')
+    fetchMeals()
+  } catch (error) {
+    if (error === 'cancel') {
+      return
     }
-  } catch {
-    // 用户取消操作
+    console.error('删除失败:', error)
+    ElMessage.error('删除失败')
   }
 }
 
-const toggleShare = (meal) => {
-  ElMessage.success(meal.isPublic ? '已分享到社区' : '已取消分享')
+const toggleShare = async (meal) => {
+  try {
+    await toggleShareMealRecord(meal.id, meal.isShared)
+    ElMessage.success(meal.isShared ? '已分享到社区' : '已取消分享')
+  } catch (error) {
+    console.error('切换分享状态失败:', error)
+    meal.isShared = !meal.isShared
+    ElMessage.error('操作失败')
+  }
 }
 
 const saveMeal = async () => {
   try {
     await mealFormRef.value.validate()
-    
-    const mealData = {
-      ...mealForm.value,
-      images: mealForm.value.images.map(img => img.url || img.raw),
-      id: editingMeal.value ? editingMeal.value.id : Date.now(),
-      createdAt: editingMeal.value ? editingMeal.value.createdAt : new Date()
-    }
-    
-    if (editingMeal.value) {
-      const index = meals.value.findIndex(meal => meal.id === editingMeal.value.id)
-      if (index > -1) {
-        meals.value[index] = mealData
+    saving.value = true
+
+    const formData = new FormData()
+    formData.append('mealType', mealForm.value.mealType)
+    formData.append('description', mealForm.value.description)
+    formData.append('calories', mealForm.value.calories)
+    formData.append('rating', mealForm.value.rating)
+    formData.append('isShared', mealForm.value.isShared)
+
+    // 添加图片文件
+    mealForm.value.images.forEach((file) => {
+      if (file.raw) {
+        formData.append('images', file.raw)
       }
+    })
+
+    if (editingMeal.value) {
+      await updateMealRecord(editingMeal.value.id, formData)
       ElMessage.success('更新成功')
     } else {
-      meals.value.unshift(mealData)
+      await addMealRecord(formData)
       ElMessage.success('添加成功')
     }
-    
+
     showAddMealDialog.value = false
     resetForm()
+    fetchMeals()
   } catch (error) {
-    console.error('表单验证失败:', error)
+    console.error('保存失败:', error)
+    ElMessage.error('保存失败')
+  } finally {
+    saving.value = false
   }
 }
 
 const resetForm = () => {
   mealForm.value = {
-    type: '',
+    mealType: '',
     description: '',
     calories: 0,
     rating: 5,
     images: [],
-    isPublic: false
+    isShared: false
   }
   editingMeal.value = null
   mealFormRef.value?.resetFields()
@@ -391,12 +389,17 @@ const handlePreview = (file) => {
 }
 
 const handleRemove = (file, fileList) => {
-  console.log('移除文件:', file, fileList)
+  mealForm.value.images = fileList
 }
 
 const handleChange = (file, fileList) => {
-  console.log('文件变化:', file, fileList)
+  mealForm.value.images = fileList
 }
+
+// 初始化
+onMounted(() => {
+  fetchMeals()
+})
 </script>
 
 <style scoped>
@@ -452,6 +455,10 @@ const handleChange = (file, fileList) => {
   border-radius: 12px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   overflow: hidden;
+}
+
+.loading-state {
+  padding: 20px;
 }
 
 .empty-state {
@@ -596,25 +603,25 @@ const handleChange = (file, fileList) => {
   .my-meals-container {
     padding: 16px;
   }
-  
+
   .page-header {
     flex-direction: column;
     gap: 16px;
     align-items: stretch;
   }
-  
+
   .meal-header {
     flex-direction: column;
     gap: 8px;
     align-items: flex-start;
   }
-  
+
   .meal-footer {
     flex-direction: column;
     gap: 12px;
     align-items: flex-start;
   }
-  
+
   .meal-stats {
     flex-direction: column;
     gap: 8px;
