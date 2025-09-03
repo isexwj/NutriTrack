@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.myproject.mapper.DailyDietAnalysisMapper">
+
+    <select id="getTopHealthScores" resultType="java.util.Map" parameterType="int">
+        SELECT u.username, d.health_score
+        FROM users u
+                 JOIN daily_diet_analysis d ON u.id = d.user_id
+                 INNER JOIN (SELECT user_id, MAX(analysis_date) AS latest_date
+                             FROM daily_diet_analysis
+                             GROUP BY user_id) t ON d.user_id = t.user_id AND d.analysis_date = t.latest_date
+        ORDER BY d.health_score DESC
+        LIMIT #{topN}
+    </select>
+</mapper>

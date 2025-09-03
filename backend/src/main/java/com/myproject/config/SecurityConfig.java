@@ -1,6 +1,7 @@
 package com.myproject.config;
 
 import com.myproject.utils.JwtUtil;
+import com.myproject.filter.JwtAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -31,6 +32,13 @@ public class SecurityConfig {
     @Bean
     public static PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    private final JwtAuthenticationFilter jwtAuthFilter;
+
+    // 添加构造函数注入
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthFilter) {
+        this.jwtAuthFilter = jwtAuthFilter;
     }
 
     @Bean
