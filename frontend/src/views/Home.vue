@@ -101,8 +101,11 @@
 
       <!-- 右侧内容区域 -->
       <main class="content-area">
-        <component :is="currentComponent" />
+       <component :is="currentComponent"
+           @update-active-menu="switchMenu" />
+         <!-- 监听子组件的切换事件 -->
       </main>
+      
     </div>
   </div>
 </template>
