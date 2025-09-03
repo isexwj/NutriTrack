@@ -259,7 +259,6 @@ const formatTime = (date) => {
 const getFullImageUrl = (url) => {
   if (!url) return ''
   if (url.startsWith('http')) return url
-  console.log('url', url)
   return `http://localhost:8080/images/${url}`
 }
 
@@ -333,8 +332,11 @@ const deleteMeal = async (mealId) => {
 
 const toggleShare = async (meal) => {
   try {
-    await toggleShareMealRecord(meal.id, meal.isShared)
-    ElMessage.success(meal.isShared ? '已分享到社区' : '已取消分享')
+    const res = await toggleShareMealRecord(meal.id, meal.isShared)
+    if (res && res.code === 200) {
+      ElMessage.success(meal.isShared ? '已分享到社区' : '已取消分享')
+    }
+    else ElMessage.error(res?.message || '更新失败')
   } catch (error) {
     console.error('切换分享状态失败:', error)
     meal.isShared = !meal.isShared

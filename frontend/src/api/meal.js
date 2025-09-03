@@ -41,6 +41,6 @@ export function toggleShareMealRecord(id, isShared) {
     return request({
         url: `/meal-records/share/${id}`,
         method: 'patch',
-        data: { isShared }
+        data: {"isShared": isShared }
     })
 }
