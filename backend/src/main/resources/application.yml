@@ -37,3 +37,10 @@ mybatis-plus:
 file:
   # 图片文件夹的绝对路径 TODO: 需要修改
   save-path: D:/大学/研一上/暑期编程实训/暑假编程大作业/NutriTrack/backend/src/main/resources/static/images/
+deepseek:
+  base-url: https://api.deepseek.com/v1
+  api-path: /chat/completions
+  api-key: ${DEEPSEEK_API_KEY:sk-f45d6f456f5243b2a721c25cbb093b0b}
+  model: deepseek-chat
+  max-prompt-chars: 3000
+

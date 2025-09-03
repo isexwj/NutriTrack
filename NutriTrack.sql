@@ -120,7 +120,7 @@ INSERT INTO `meal_records` VALUES (3, 4, 'dinner', '晚上和朋友聚餐，吃�
 INSERT INTO `meal_records` VALUES (4, 5, 'dinner', '自己做的番茄意面，简单又健康。', 550, 4.5, '2025-09-01', 1, '2025-09-02 17:05:56', '2025-09-02 17:05:56');
 INSERT INTO `meal_records` VALUES (5, 4, 'breakfast', '今天起晚了，只喝了一杯黑咖啡。', 20, 3.0, '2025-09-02', 0, '2025-09-02 17:05:56', '2025-09-02 17:05:56');
 INSERT INTO `meal_records` VALUES (6, 4, 'lunch', '点的外卖麻辣香锅，好吃是好吃，但感觉热量爆炸。', 880, 4.0, '2025-09-02', 1, '2025-09-02 17:05:56', '2025-09-02 17:05:56');
-INSERT INTO `meal_records` VALUES (7, 5, 'breakfast', '自制牛油果奶昔，好喝！', 320, 5.0, '2025-09-02', 1, '2025-09-02 17:05:56', '2025-09-02 17:05:56');
+INSERT INTO `meal_records` VALUES (7, 7, 'breakfast', '自制牛油果奶昔，好喝！', 320, 5.0, '2025-09-03', 1, '2025-09-02 17:05:56', '2025-09-02 17:05:56');
 INSERT INTO `meal_records` VALUES (8, 6, 'lunch', '健身后的午餐，三文鱼、西兰花和糙米饭，非常标准的健身餐。', 580, 5.0, '2025-09-02', 1, '2025-09-02 17:05:56', '2025-09-02 17:05:56');
 
 -- ----------------------------
@@ -225,7 +225,7 @@ CREATE TABLE `users`  (
   `phone_number` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '手机号，可用于登录或找回密码',
   `nickname` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '用户昵称，在社区显示',
   `avatar_url` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '头像图片URL',
-  `status` enum('active','inactive','suspended','deleted') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'active' COMMENT '用户状态: active-活跃, inactive-未激活, suspended-被封禁, deleted-已注销',
+  `status` enum('active','inactive','suspended','deleted') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'actictiveve'' COMMENT ''用户状态: active-活跃, ina-未激活, suspended-被封禁, deleted-已注销',
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '注册时间',
   `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '信息更新时间',
   `deleted_at` timestamp NULL DEFAULT NULL COMMENT '执行注销操作的时间，status不为deleted时为NULL',
