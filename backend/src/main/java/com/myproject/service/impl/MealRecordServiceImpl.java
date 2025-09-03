@@ -14,6 +14,7 @@ import com.myproject.vo.MealRecordVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -39,7 +40,9 @@ public class MealRecordServiceImpl implements MealRecordService {
     private MealImageMapper mealImageMapper;
 
     // 图片存储路径
-    private final String IMAGE_UPLOAD_DIR = "src/main/resources/static.images/";
+    @Value("${file.save-path}") // 注入配置文件中定义的文件保存路径
+    private String IMAGE_UPLOAD_DIR;
+    //private final String IMAGE_UPLOAD_DIR = "src/main/resources/static.images/";
 
     @Override
     @Transactional
@@ -63,7 +66,7 @@ public class MealRecordServiceImpl implements MealRecordService {
             // 2. 处理图片上传
             List<String> imageUrls = new ArrayList<>();
             if (createDTO.getImages() != null && !createDTO.getImages().isEmpty()) {
-                int order = 0;
+                int order = 1;
                 for (MultipartFile image : createDTO.getImages()) {
                     if (!image.isEmpty()) {
                         try {
@@ -323,24 +326,27 @@ public class MealRecordServiceImpl implements MealRecordService {
         String fileExtension = originalFilename != null && originalFilename.contains(".") ?
                 originalFilename.substring(originalFilename.lastIndexOf(".")) : ".jpg";
 
-        String filename = String.format("%d_%s_%d_%s",
+        String filename = String.format("%d_%s_%d%s",
                 recordId, dateStr, order, fileExtension);
+
 
         // 保存文件
         Path filePath = Paths.get(IMAGE_UPLOAD_DIR + filename);
         Files.write(filePath, image.getBytes());
 
         // 返回相对路径，用于前端访问
-        return "/" + filename;
+        return filename;
     }
 
     /**
      * 删除图片文件
      */
     private void deleteImageFile(String imageUrl) {
-        if (imageUrl != null && imageUrl.startsWith("/")) {
-            String filename = imageUrl.substring("/".length());
-            File file = new File(IMAGE_UPLOAD_DIR + filename);
+        System.out.println("awefawefffffffffffffffffffff");
+        System.out.println(imageUrl);
+        System.out.println(imageUrl);
+        if (imageUrl != null) {
+            File file = new File(IMAGE_UPLOAD_DIR + imageUrl);
             if (file.exists()) {
                 file.delete();
             }

@@ -1,5 +1,6 @@
 package com.myproject.entity;
 
+import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
@@ -14,7 +15,7 @@ import java.time.LocalDateTime;
 @Data
 @TableName("meal_images")
 public class MealImage {
-    @TableId
+    @TableId(type = IdType.AUTO)
     @TableField("id")
     private Long id;
 
