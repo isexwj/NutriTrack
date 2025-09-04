@@ -2,7 +2,7 @@ spring:
   datasource:
     url: jdbc:mysql://localhost:3306/nutritrack?useSSL=true&serverTimezone=UTC&characterEncoding=utf8
     username: root
-    password: admin
+    password: tiger123456
   
   # 允许循环引用（解决Spring Security循环依赖问题）
   main:
@@ -35,5 +35,5 @@ mybatis-plus:
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
 
 file:
-  # 图片文件夹的绝对路径 TODO: 需要修改
-  save-path: D:/大学/研一上/暑期编程实训/暑假编程大作业/NutriTrack/backend/src/main/resources/static/images/
+  # 图片文件夹的相对路径，相对于项目根目录
+  save-path: src/main/resources/static/images/

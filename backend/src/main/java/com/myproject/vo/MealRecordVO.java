@@ -19,5 +19,6 @@ public class MealRecordVO {
     private LocalDate recordDate;
     private Boolean isShared;
     private LocalDateTime createdAt;
-    private List<String> imageUrls; // 图片URL列表
+    private List<String> imageUrls; // 图片URL列表（保持向后兼容）
+    private List<MealImageVO> images; // 图片详细信息列表
 }
