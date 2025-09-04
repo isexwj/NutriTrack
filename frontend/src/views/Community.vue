@@ -260,7 +260,7 @@ const fetchCommunityRecords = async () => {
     posts.value = response.data.map(post => ({
       ...post,
       // 拼接完整图片URL
-      images: post.images.map(img => `http://localhost:8080/images/${img}`),
+      images: post.images ? post.images.map(img => getFullImageUrl(img)) : [],
       showComments: false,
       newComment: ''
     }));
@@ -316,6 +316,12 @@ const getMealTypeColor = (type) => {
     dinner: 'info'
   }
   return colorMap[type] || 'default'
+}
+
+const getFullImageUrl = (url) => {
+  if (!url) return ''
+  if (url.startsWith('http')) return url
+  return `http://localhost:8080/images/${url}`
 }
 
 const formatTime = (date) => {

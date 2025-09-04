@@ -11,6 +11,7 @@ import com.myproject.mapper.MealImageMapper;
 import com.myproject.mapper.MealRecordMapper;
 import com.myproject.service.MealRecordService;
 import com.myproject.vo.MealRecordVO;
+import com.myproject.vo.MealImageVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -302,10 +303,21 @@ public class MealRecordServiceImpl implements MealRecordService {
 
         List<MealImage> images = mealImageMapper.selectList(imageQueryWrapper);
         List<String> imageUrls = new ArrayList<>();
+        List<MealImageVO> imageVOs = new ArrayList<>();
+        
         for (MealImage image : images) {
             imageUrls.add(image.getImageUrl());
+            
+            // 创建图片VO
+            MealImageVO imageVO = new MealImageVO();
+            imageVO.setId(image.getId());
+            imageVO.setImageUrl(image.getImageUrl());
+            imageVO.setUploadOrder(image.getUploadOrder());
+            imageVOs.add(imageVO);
         }
+        
         vo.setImageUrls(imageUrls);
+        vo.setImages(imageVOs);
 
         return vo;
     }
@@ -314,13 +326,13 @@ public class MealRecordServiceImpl implements MealRecordService {
      * 保存图片到本地文件系统
      */
     private String saveImage(MultipartFile image, Long recordId, int order) throws IOException {
-        // 确保目录存在
-        File directory = new File(IMAGE_UPLOAD_DIR);
-        if (!directory.exists()) {
-            directory.mkdirs();
-        }
+        // 解析静态资源目录为绝对路径，确保与 WebConfig 的资源映射一致
+        Path imagesDir = Paths.get(System.getProperty("user.dir")).resolve(IMAGE_UPLOAD_DIR).normalize();
 
-        // 生成文件名: {用户id_日期年月日_记录id_序号.jpg}
+        // 确保目录存在
+        Files.createDirectories(imagesDir);
+
+        // 生成文件名: {记录id_日期年月日_序号.jpg}
         String dateStr = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
         String originalFilename = image.getOriginalFilename();
         String fileExtension = originalFilename != null && originalFilename.contains(".") ?
@@ -329,9 +341,8 @@ public class MealRecordServiceImpl implements MealRecordService {
         String filename = String.format("%d_%s_%d%s",
                 recordId, dateStr, order, fileExtension);
 
-
         // 保存文件
-        Path filePath = Paths.get(IMAGE_UPLOAD_DIR + filename);
+        Path filePath = imagesDir.resolve(filename);
         Files.write(filePath, image.getBytes());
 
         // 返回相对路径，用于前端访问
@@ -342,14 +353,16 @@ public class MealRecordServiceImpl implements MealRecordService {
      * 删除图片文件
      */
     private void deleteImageFile(String imageUrl) {
-        System.out.println("awefawefffffffffffffffffffff");
-        System.out.println(imageUrl);
-        System.out.println(imageUrl);
-        if (imageUrl != null) {
-            File file = new File(IMAGE_UPLOAD_DIR + imageUrl);
-            if (file.exists()) {
-                file.delete();
+        try {
+            if (imageUrl == null || imageUrl.isEmpty()) {
+                return;
             }
+            Path imagesDir = Paths.get(System.getProperty("user.dir")).resolve(IMAGE_UPLOAD_DIR).normalize();
+            Path filePath = imagesDir.resolve(imageUrl).normalize();
+            if (Files.exists(filePath)) {
+                Files.delete(filePath);
+            }
+        } catch (Exception ignored) {
         }
     }
 
