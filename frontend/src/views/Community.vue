@@ -70,21 +70,23 @@
           <!-- 内容区域 -->
           <div class="post-content">
             <div class="post-description">{{ post.description }}</div>
-            <div v-if="post.images && post.images.length > 0" class="post-images">
-              <div class="image-grid" :class="`grid-${Math.min(post.images.length, 4)}`">
-                <div 
-                  v-for="(image, index) in post.images.slice(0, 4)" 
-                  :key="index"
-                  class="post-image"
-                  @click="previewImage(post.images, index)"
+            <!-- 替换原来的 post-images 部分 -->
+            <div class="post-images">
+              <div class="image-grid">
+                <div
+                    v-for="(image, index) in post.images.slice(0, 3)"
+                    :key="index"
+                    class="meal-image"
+                    @click="previewImage(post.images, index)"
                 >
                   <img :src="image" :alt="`餐食图片${index + 1}`" />
-                  <div v-if="index === 3 && post.images.length > 4" class="more-overlay">
-                    +{{ post.images.length - 4 }}
-                  </div>
+                </div>
+                <div v-if="post.images.length > 3" class="more-images">
+                  +{{ post.images.length - 3 }}
                 </div>
               </div>
             </div>
+
           </div>
           
           <!-- 统计信息 -->
@@ -589,7 +591,50 @@ const previewImage = (images, index) => {
   margin-top: 12px;
 }
 
+/* 替换原来的 .post-images 和相关样式 */
+.post-images {
+  margin-top: 12px;
+}
+
 .image-grid {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.meal-image {
+  width: 80px;
+  height: 80px;
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.meal-image:hover {
+  transform: scale(1.05);
+}
+
+.meal-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.more-images {
+  width: 80px;
+  height: 80px;
+  background: #f1f5f9;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/*.image-grid {
   display: grid;
   gap: 8px;
   border-radius: 8px;
@@ -644,7 +689,7 @@ const previewImage = (images, index) => {
   color: white;
   font-size: 18px;
   font-weight: 600;
-}
+}*/
 
 .post-stats {
   display: flex;
