@@ -53,10 +53,10 @@
           <div class="post-header">
             <div class="user-info">
               <el-avatar :size="40" class="user-avatar">
-                {{ post.user.name.charAt(0).toUpperCase() }}
+                {{ post.user.username.charAt(0).toUpperCase() }}
               </el-avatar>
               <div class="user-details">
-                <div class="username">{{ post.user.name }}</div>
+                <div class="username">{{ post.user.username }}</div>
                 <div class="post-time">{{ formatTime(post.createdAt) }}</div>
               </div>
             </div>
@@ -130,11 +130,11 @@
                 class="comment-item"
               >
                 <el-avatar :size="24" class="comment-avatar">
-                  {{ comment.user.name.charAt(0).toUpperCase() }}
+                  {{ comment.user.username.charAt(0).toUpperCase() }}
                 </el-avatar>
                 <div class="comment-content">
                   <div class="comment-header">
-                    <span class="comment-user">{{ comment.user.name }}</span>
+                    <span class="comment-user">{{ comment.user.username }}</span>
                     <span class="comment-time">{{ formatTime(comment.createdAt) }}</span>
                   </div>
                   <div class="comment-text">{{ comment.content }}</div>
@@ -175,10 +175,10 @@
           <div class="preview-card">
             <div class="preview-header">
               <el-avatar :size="32">
-                {{ sharingPost.user.name.charAt(0).toUpperCase() }}
+                {{ sharingPost.user.username.charAt(0).toUpperCase() }}
               </el-avatar>
               <div class="preview-info">
-                <div class="preview-username">{{ sharingPost.user.name }}</div>
+                <div class="preview-username">{{ sharingPost.user.username }}</div>
                 <div class="preview-time">{{ formatTime(sharingPost.createdAt) }}</div>
               </div>
             </div>
@@ -204,6 +204,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Star, ChatDotRound, Share, Link } from '@element-plus/icons-vue'
+import * as communityApi from '@/api/community'
 
 // 响应式数据
 const selectedMealType = ref('all')
@@ -213,109 +214,9 @@ const showShareDialog = ref(false)
 const previewImages = ref([])
 const previewIndex = ref(0)
 const sharingPost = ref({})
+const posts = ref([])
+const loading = ref(false)
 
-// 模拟数据
-const posts = ref([
-  {
-    id: 1,
-    type: 'breakfast',
-    description: '今天的早餐超级丰盛！全麦吐司配牛油果，煎蛋，还有新鲜的水果沙拉。营养均衡，口感丰富，开启美好一天！',
-    calories: 520,
-    rating: 5,
-    images: [
-      'https://images.unsplash.com/photo-1551782450-17144efb9c50?w=400&h=300&fit=crop',
-      'https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=400&h=300&fit=crop'
-    ],
-    likes: 24,
-    isLiked: false,
-    comments: [
-      {
-        id: 1,
-        user: { name: '健康达人' },
-        content: '看起来好有食欲！请问牛油果是怎么处理的？',
-        createdAt: new Date('2024-01-15 09:30:00')
-      },
-      {
-        id: 2,
-        user: { name: '营养师小王' },
-        content: '营养搭配很棒！全麦面包提供复合碳水化合物，牛油果提供健康脂肪。',
-        createdAt: new Date('2024-01-15 10:15:00')
-      }
-    ],
-    showComments: false,
-    newComment: '',
-    user: { name: '美食爱好者' },
-    createdAt: new Date('2024-01-15 08:30:00')
-  },
-  {
-    id: 2,
-    type: 'lunch',
-    description: '轻食午餐：藜麦沙拉配烤鸡胸肉，蔬菜丰富，蛋白质充足。少油少盐，健康美味！',
-    calories: 380,
-    rating: 4,
-    images: [
-      'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400&h=300&fit=crop',
-      'https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=400&h=300&fit=crop',
-      'https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=400&h=300&fit=crop'
-    ],
-    likes: 18,
-    isLiked: true,
-    comments: [
-      {
-        id: 3,
-        user: { name: '健身达人' },
-        content: '这个搭配太棒了！藜麦是超级食物，鸡胸肉蛋白质含量高。',
-        createdAt: new Date('2024-01-15 13:20:00')
-      }
-    ],
-    showComments: false,
-    newComment: '',
-    user: { name: '健身教练' },
-    createdAt: new Date('2024-01-15 12:15:00')
-  },
-  {
-    id: 3,
-    type: 'dinner',
-    description: '简单健康的晚餐：蒸蛋羹、清炒时蔬、紫菜蛋花汤。清淡不油腻，营养易消化。',
-    calories: 320,
-    rating: 4,
-    images: [
-      'https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=400&h=300&fit=crop'
-    ],
-    likes: 12,
-    isLiked: false,
-    comments: [],
-    showComments: false,
-    newComment: '',
-    user: { name: '养生达人' },
-    createdAt: new Date('2024-01-15 18:45:00')
-  },
-  {
-    id: 4,
-    type: 'breakfast',
-    description: '燕麦粥配坚果和蓝莓，简单营养的早餐选择。燕麦富含膳食纤维，坚果提供健康脂肪。',
-    calories: 280,
-    rating: 4,
-    images: [
-      'https://images.unsplash.com/photo-1551782450-17144efb9c50?w=400&h=300&fit=crop',
-      'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400&h=300&fit=crop'
-    ],
-    likes: 15,
-    isLiked: false,
-    comments: [
-      {
-        id: 4,
-        user: { name: '营养师' },
-        content: '燕麦是很好的早餐选择，建议可以加一些奇亚籽增加omega-3。',
-        createdAt: new Date('2024-01-14 08:45:00')
-      }
-    ],
-    showComments: false,
-    newComment: '',
-    user: { name: '健康生活' },
-    createdAt: new Date('2024-01-14 07:20:00')
-  }
-])
 
 // 计算属性
 const totalPosts = computed(() => posts.value.length)
@@ -352,6 +253,53 @@ const filteredPosts = computed(() => {
 })
 
 // 方法
+const fetchCommunityRecords = async () => {
+  try {
+    loading.value = true;
+    const response = await communityApi.getCommunityRecords(localStorage.getItem('username'));
+    posts.value = response.data.map(post => ({
+      ...post,
+      // 拼接完整图片URL
+      images: post.images.map(img => `http://localhost:8080/images/${img}`),
+      showComments: false,
+      newComment: ''
+    }));
+  } catch (error) {
+    console.error('获取社区记录失败:', error);
+    ElMessage.error('获取社区记录失败: ' + error.message);
+  } finally {
+    loading.value = false;
+  }
+};
+
+// 点赞
+const likeRecord = async (recordId, username) => {
+  try {
+    await communityApi.likeRecord(recordId, username);
+    return true;
+  } catch (error) {
+    console.error('点赞失败:', error);
+    return false;
+  }
+};
+
+// 取消点赞
+const unlikeRecord = async (recordId, username) => {
+  try {
+    await communityApi.unlikeRecord(recordId, username);
+    return true;
+  } catch (error) {
+    console.error('点赞失败:', error);
+    return false;
+  }
+};
+
+// 确保函数被调用 - 在onMounted或需要的地方调用
+onMounted(() => {
+  fetchCommunityRecords();
+});
+
+
 const getMealTypeName = (type) => {
   const typeMap = {
     breakfast: '早餐',
@@ -403,10 +351,12 @@ const toggleLike = (post) => {
   if (post.isLiked) {
     post.likes--
     post.isLiked = false
+    unlikeRecord(post.id,localStorage.getItem('username'))
     ElMessage.success('取消点赞')
   } else {
     post.likes++
     post.isLiked = true
+    likeRecord(post.id,localStorage.getItem('username'))
     ElMessage.success('点赞成功')
   }
 }
@@ -415,20 +365,46 @@ const toggleComments = (post) => {
   post.showComments = !post.showComments
 }
 
-const addComment = (post) => {
-  if (!post.newComment.trim()) return
-  
-  const newComment = {
-    id: Date.now(),
-    user: { name: '我' },
-    content: post.newComment,
-    createdAt: new Date()
+const addComment = async (post) => {
+  if (!post.newComment.trim()) {
+    ElMessage.warning('评论内容不能为空');
+    return;
   }
-  
-  post.comments.push(newComment)
-  post.newComment = ''
-  ElMessage.success('评论成功')
-}
+
+  try {
+    // 从本地存储获取用户名
+    const username = localStorage.getItem('username') || '当前用户';
+
+    // 调用后端API发表评论
+    const response = await communityApi.createComment(
+        post.id,           // recordId: 当前记录的ID
+        username,          // username: 评论者用户名
+        post.newComment,   // content: 评论内容
+        null               // parentCommentId: 可选参数，这里设为null
+    );
+
+    if (response.code === 200) {
+      // 使用后端返回的真实评论数据
+      const newComment = {
+        id: response.data.id,           // 使用后端生成的ID
+        user: response.data.user,       // 使用后端返回的用户信息
+        content: response.data.content, // 使用后端处理后的内容
+        createdAt: new Date() // 使用后端的时间戳
+      };
+
+      // 添加到评论列表
+      post.comments.push(newComment);
+      post.newComment = '';
+      ElMessage.success('评论成功');
+
+    } else {
+      ElMessage.error(response.message || '评论失败');
+    }
+  } catch (error) {
+    console.error('发表评论失败:', error);
+    ElMessage.error('发表评论失败，请稍后重试');
+  }
+};
 
 const sharePost = (post) => {
   sharingPost.value = post
