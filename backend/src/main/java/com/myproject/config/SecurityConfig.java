@@ -46,6 +46,7 @@ public class SecurityConfig {
                     .requestMatchers("/user/login", "/user/register", "/user/forget-password").permitAll()
                     .requestMatchers("/swagger-ui.html", "/v3/api-docs/**", "/swagger-ui/**").permitAll()
                     .requestMatchers("/images/**").permitAll()
+                    .requestMatchers("/api/ai/**").permitAll()
                     .anyRequest().authenticated()
             )
             // 添加JWT过滤器到过滤器链中
