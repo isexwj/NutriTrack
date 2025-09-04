@@ -18,6 +18,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+
 @Service
 public class UserServiceImpl implements UserService {
 
@@ -123,6 +125,9 @@ public class UserServiceImpl implements UserService {
                     .role("USER") // 假设所有用户角色都是"USER"
                     // 核心适配：将新的createdAt字段值赋给旧的createTime字段
                     .createTime(user.getCreatedAt())
+                    .updateTime(user.getUpdatedAt())
+                    .phoneNumber(user.getPhoneNumber())
+                    .nickname(user.getNickname())
                     .build();
 
             return ResponseResult.success(userInfoVO);
@@ -137,6 +142,52 @@ public class UserServiceImpl implements UserService {
         queryWrapper.eq("username", username);
         return userMapper.selectOne(queryWrapper);
     }
+
+    @Override
+    public ResponseResult<String> updateUserInfo(String username, UserInfoVO userInfoVO) {
+        try {
+            User user = findByUsername(username);
+            if (user == null) {
+                return ResponseResult.fail("用户不存在");
+            }
+
+            // 更新用户信息
+            user.setNickname(userInfoVO.getNickname());
+            user.setEmail(userInfoVO.getEmail());
+            user.setPhoneNumber(userInfoVO.getPhoneNumber());
+            user.setUpdatedAt(LocalDateTime.now());
+            userMapper.updateById(user);
+
+            return ResponseResult.success("用户信息更新成功");
+        } catch (Exception e) {
+            return ResponseResult.fail("更新用户信息失败，请稍后重试");
+        }
+    }
+
+    @Override
+    public ResponseResult<String> deactivateAccount(String username) {
+        try {
+            User user = findByUsername(username);
+            if (user == null) {
+                return ResponseResult.fail("用户不存在");
+            }
+
+            // 检查用户状态
+            if (user.getStatus().equals(UserStatus.DELETED)) {
+                return ResponseResult.fail("账户已被注销");
+            }
+
+            // 更新用户状态为已注销
+            user.setStatus(UserStatus.DELETED);
+            user.setDeletedAt(LocalDateTime.now());
+            userMapper.updateById(user);
+
+            return ResponseResult.success("账户注销成功");
+        } catch (Exception e) {
+            return ResponseResult.fail("注销账户失败，请稍后重试");
+        }
+    }
+
 
     @Override
     @Transactional
