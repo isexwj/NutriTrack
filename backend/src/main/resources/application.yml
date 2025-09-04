@@ -36,7 +36,7 @@ mybatis-plus:
 
 file:
   # 图片文件夹的相对路径，相对于项目根目录
-  save-path: src/main/resources/static/images/
+  save-path: backend/src/main/resources/static/images/
 
 deepseek:
   base-url: https://api.deepseek.com/v1
