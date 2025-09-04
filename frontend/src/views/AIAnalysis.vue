@@ -26,15 +26,15 @@
         <div class="card-content">
           <div class="overview-stats">
             <div class="stat-item">
-              <div class="stat-value">{{ todayStats.totalMeals }}</div>
+              <div class="stat-value">{{ todayStats.meals }}</div>
               <div class="stat-label">用餐次数</div>
             </div>
             <div class="stat-item">
-              <div class="stat-value">{{ todayStats.totalCalories }}</div>
+              <div class="stat-value">{{ todayStats.calories }}</div>
               <div class="stat-label">总卡路里</div>
             </div>
             <div class="stat-item">
-              <div class="stat-value">{{ todayStats.avgRating }}</div>
+              <div class="stat-value">{{ todayStats.rating }}</div>
               <div class="stat-label">平均评分</div>
             </div>
             <div class="stat-item">
@@ -97,7 +97,7 @@
                   </div>
                 </div>
                 <div class="nutrition-summary">
-                  {{ analysisReport.nutrition.summary }}
+                  {{ analysisReport.nutritionSummary }}
                 </div>
               </div>
             </div>
@@ -164,26 +164,22 @@
             </el-select>
           </div>
         </div>
+
         <div class="trend-content">
           <div class="trend-charts">
             <div class="chart-container">
               <div class="chart-title">卡路里摄入趋势</div>
-              <div class="chart-placeholder">
-                <el-icon size="48"><Star /></el-icon>
-                <div>图表数据加载中...</div>
-              </div>
+              <div ref="caloriesChart" class="echart" style="height:220px;"></div>
             </div>
             <div class="chart-container">
               <div class="chart-title">健康指数变化</div>
-              <div class="chart-placeholder">
-                <el-icon size="48"><Star /></el-icon>
-                <div>图表数据加载中...</div>
-              </div>
+              <div ref="healthChart" class="echart" style="height:220px;"></div>
             </div>
           </div>
         </div>
       </div>
     </div>
+
 
     <!-- AI对话助手 -->
     <div class="ai-chat">
@@ -236,14 +232,23 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted, nextTick } from 'vue'
 import { useUserStore } from '@/store/user'
 import { ElMessage } from 'element-plus'
-import { 
-  Document, 
-  Star, 
-  User
-} from '@element-plus/icons-vue'
+import {chatWithAI, getTrendAnalysis} from '@/api/ai'
+import {
+  getDailyAnalysis
+} from '@/api/ai'
+
+import * as echarts from 'echarts'
+import {getTodayStats} from "@/api/meal.js";
+
+
+const caloriesChart = ref(null)
+const healthChart = ref(null)
+let caloriesChartInstance = null
+let healthChartInstance = null
+
 
 const userStore = useUserStore()
 
@@ -254,18 +259,18 @@ const trendPeriod = ref('7d')
 const chatInput = ref('')
 const lastAnalysisTime = ref('')
 
-// 今日统计数据
+// 今日统计数据（页面其它部分仍可从 API 加载，这里保留初始值）
 const todayStats = ref({
-  totalMeals: 3,
-  totalCalories: 1250,
-  avgRating: 4.2,
-  healthScore: 85
+  totalMeals: 0,
+  totalCalories: 0,
+  avgRating: 0,
+  healthScore: 0
 })
 
-// AI分析报告
+// AI 分析报告
 const analysisReport = ref(null)
 
-// 聊天消息
+// 聊天消息（页面已有初始问候）
 const chatMessages = ref([
   {
     id: 1,
@@ -275,38 +280,22 @@ const chatMessages = ref([
   }
 ])
 
-// 方法
+/**
+ * 生成或获取当天分析报告
+ * 调用后端 API: GET /api/ai/daily-analysis
+ */
 const generateAnalysis = async () => {
   isAnalyzing.value = true
-  
   try {
-    // 模拟API调用
-    await new Promise(resolve => setTimeout(resolve, 2000))
-    
-    // 模拟分析结果
-    analysisReport.value = {
-      nutrition: {
-        carbs: 45,
-        protein: 25,
-        fat: 30,
-        summary: '您的饮食结构相对均衡，碳水化合物摄入适中，蛋白质含量良好，建议适当增加膳食纤维的摄入。'
-      },
-      suggestions: [
-        '建议增加蔬菜和水果的摄入量，每天至少5份',
-        '可以适当增加全谷物食品，如燕麦、糙米等',
-        '保持充足的水分摄入，每天至少8杯水',
-        '建议减少加工食品的摄入，选择天然食材'
-      ],
-      improvements: [
-        '早餐可以增加蛋白质含量，如鸡蛋、牛奶等',
-        '午餐建议增加绿叶蔬菜的比例',
-        '晚餐可以适当减少碳水化合物的摄入',
-        '建议增加坚果类健康脂肪的摄入'
-      ]
+    const res = await getDailyAnalysis()
+    if (res && res.data) {
+      // res.data 是后端返回的 DailyAnalysisReportVO
+      analysisReport.value = res.data
+      lastAnalysisTime.value = res.data.lastUpdated || new Date().toLocaleString('zh-CN')
+      ElMessage.success('分析报告获取成功')
+    } else {
+      ElMessage.error('未返回分析数据')
     }
-    
-    lastAnalysisTime.value = new Date().toLocaleString('zh-CN')
-    ElMessage.success('分析报告生成成功！')
   } catch (error) {
     ElMessage.error('分析失败，请稍后重试')
   } finally {
@@ -314,64 +303,281 @@ const generateAnalysis = async () => {
   }
 }
 
-const updateTrend = () => {
-  ElMessage.info(`切换到${trendPeriod.value}趋势分析`)
+/**
+ * 页面载入时可以先拉取今日统计（本次实现仅关注分析报告，
+ * 如果需要完整今日统计，请实装 getTodayStats API）
+ */
+const loadTodayStats = async () => {
+  // 若需要实现，请在 api/ai.js 中添加 getTodayStats 并在此调用
+  // 这里保留空实现以免影响页面其它功能
 }
 
+const fetchTodayStats = async () => {
+  try {
+    const today = new Date().toISOString().split('T')[0]; // "2025-09-03"
+    const res = await getTodayStats(today)
+    todayStats.value = res.data // 需与后端返回格式一致
+  } catch (error) {
+    console.error('获取今日统计失败', error)
+  }
+}
+
+
+const initCharts = async () => {
+  await nextTick()
+  try {
+    if (caloriesChartInstance) {
+      try { caloriesChartInstance.dispose() } catch (e) { console.warn('dispose caloriesChartInstance error', e) }
+      caloriesChartInstance = null
+    }
+    if (healthChartInstance) {
+      try { healthChartInstance.dispose() } catch (e) { console.warn('dispose healthChartInstance error', e) }
+      healthChartInstance = null
+    }
+  } catch (e) {
+    console.warn('dispose charts error', e)
+  }
+
+  if (caloriesChart.value) {
+    caloriesChartInstance = echarts.init(caloriesChart.value)
+  }
+  if (healthChart.value) {
+    healthChartInstance = echarts.init(healthChart.value)
+  }
+
+  // 让图表自适应容器
+  window.requestAnimationFrame(() => {
+    if (caloriesChartInstance) caloriesChartInstance.resize()
+    if (healthChartInstance) healthChartInstance.resize()
+  })
+
+  // 初始载入趋势数据
+  await loadTrendData()
+}
+
+const daysForPeriod = (period) => {
+  if (period === '7d') return 7
+  if (period === '30d') return 30
+  if (period === '3m') return 90
+  return 7
+}
+
+const loadTrendData = async () => {
+  const days = daysForPeriod(trendPeriod.value)
+
+  // 确保图表实例已初始化
+  if (!caloriesChartInstance || !healthChartInstance) {
+    console.debug('[trend] charts not initialized, calling initCharts()')
+    await initCharts()
+  }
+
+  try {
+    console.debug('[trend] requesting backend trend, period=', trendPeriod.value)
+    const res = await getTrendAnalysis({
+      period: trendPeriod.value,
+      username: userStore.username
+    })
+
+// 打印后端原始返回
+    console.log('[trend] raw backend response:', res.data)
+
+// 后端返回结构示例： { dates: [...], calories: [...], healthScores: [...] }
+    const payload = res.data
+    if (payload && Array.isArray(payload.dates) && payload.dates.length > 0) {
+      const labels = payload.dates
+      const calData = payload.calories
+      const healthData = payload.healthScores
+
+      renderCaloriesChart(labels, calData)
+      renderHealthChart(labels, healthData)
+    } else {
+      console.warn('[trend] backend returned empty or invalid data')
+      fallbackSimulatedTrend(days)
+    }
+  } catch (err) {
+    console.error('[trend] getTrendAnalysis failed, fallback to simulated data', err)
+    fallbackSimulatedTrend(days)
+  }
+
+  // 确保 resize
+  setTimeout(() => {
+    if (caloriesChartInstance) caloriesChartInstance.resize()
+    if (healthChartInstance) healthChartInstance.resize()
+  }, 120)
+}
+
+
+// 回退函数：和你原来模拟逻辑一致
+const fallbackSimulatedTrend = (days) => {
+  const labels = []
+  const calData = []
+  const healthData = []
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date()
+    d.setDate(d.getDate() - i)
+    labels.push(`${d.getMonth() + 1}/${d.getDate()}`)
+    calData.push(200 + Math.round(Math.random() * 600)) // 模拟卡路里
+    healthData.push(50 + Math.round(Math.random() * 40)) // 模拟健康分（0-100）
+  }
+  console.debug('[trend] fallback labels:', labels)
+  renderCaloriesChart(labels, calData)
+  renderHealthChart(labels, healthData)
+}
+
+const baseAxisStyle = {
+  axisLine: { show: true },
+  axisTick: { show: true },
+  axisLabel: { show: true, formatter: (v) => v },
+  splitLine: { show: true, lineStyle: { type: 'dashed', opacity: 0.08 } }
+}
+
+const renderCaloriesChart = (labels, data) => {
+  if (!caloriesChartInstance) return
+  caloriesChartInstance.clear()
+
+  const option = {
+    tooltip: { trigger: 'axis' },
+    legend: {
+      show: true,
+      right: 10, // 距离右边 10px
+      top: 10,   // 距离顶部 10px
+      data: ['卡路里']
+    },
+    grid: { left: '6%', right: '4%', top: '12%', bottom: '8%' },
+    xAxis: {
+      type: 'category',
+      data: labels,
+      boundaryGap: false,
+      ...baseAxisStyle
+    },
+    yAxis: {
+      type: 'value',
+      name: 'kcal',
+      min: function (value) { return Math.max(0, value.min - 50) },
+      max: function (value) { return value.max + 50 },
+      ...baseAxisStyle
+    },
+    series: [
+      {
+        name: '卡路里',
+        type: 'line',
+        smooth: true,
+        data,
+        showSymbol: true,      // 显示每个点
+        symbolSize: 8,         // 点大小，默认 4
+        areaStyle: { opacity: 0.12 },
+        lineStyle: { width: 2 }
+      }
+    ]
+  }
+
+  caloriesChartInstance.setOption(option, true)
+  caloriesChartInstance.resize()
+}
+
+const renderHealthChart = (labels, data) => {
+  if (!healthChartInstance) return
+  healthChartInstance.clear()
+
+  const option = {
+    tooltip: { trigger: 'axis' },
+    legend: {
+      show: true,
+      right: 10, // 距离右边 10px
+      top: 10,   // 距离顶部 10px
+      data: ['健康指数']
+    },
+    grid: { left: '6%', right: '4%', top: '12%', bottom: '8%' },
+    xAxis: {
+      type: 'category',
+      data: labels,
+      boundaryGap: false,
+      ...baseAxisStyle
+    },
+    yAxis: {
+      type: 'value',
+      name: 'score',
+      min: 0,
+      max: 100,
+      ...baseAxisStyle
+    },
+    series: [
+      {
+        name: '健康指数',
+        type: 'line',
+        smooth: true,
+        data,
+        showSymbol: true,      // 显示每个点
+        symbolSize: 8,         // 点大小，默认 4
+        areaStyle: { opacity: 0.08 },
+        lineStyle: { width: 2 }
+      }
+    ]
+  }
+
+  healthChartInstance.setOption(option, true)
+  healthChartInstance.resize()
+}
+
+const updateTrend = async () => {
+  await loadTrendData()
+}
+
+
+// 窗口尺寸变化处理（防抖）
+let resizeTimer = null
+window.addEventListener('resize', () => {
+  if (resizeTimer) clearTimeout(resizeTimer)
+  resizeTimer = setTimeout(() => {
+    if (caloriesChartInstance) caloriesChartInstance.resize()
+    if (healthChartInstance) healthChartInstance.resize()
+  }, 150)
+})
+/**
+ * 发送聊天消息（占位实现）
+ * 目前未实现 chat 接口，如需启用，请在 api/ai.js 中添加 chat 接口并调用
+ */
 const sendMessage = async () => {
   if (!chatInput.value.trim()) return
-  
+
+  // 用户消息
   const userMessage = {
     id: Date.now(),
     type: 'user',
     content: chatInput.value,
     timestamp: new Date()
   }
-  
   chatMessages.value.push(userMessage)
+
   const userQuestion = chatInput.value
   chatInput.value = ''
   isChatLoading.value = true
-  
+
   try {
-    // 模拟AI回复
-    await new Promise(resolve => setTimeout(resolve, 1500))
-    
-    const aiResponse = generateAIResponse(userQuestion)
-    const aiMessage = {
+    const res = await chatWithAI({
+      question: userQuestion,
+      userId: userStore.userId,     // 必须有
+      username: userStore.username  // 可选，保证后端查不到 userId 时还能用
+    })
+
+    // 只取 AI 返回的文字内容
+    const aiText = res.data.data?.content || 'AI未返回内容'
+
+    chatMessages.value.push({
       id: Date.now() + 1,
       type: 'ai',
-      content: aiResponse,
+      content: aiText,
       timestamp: new Date()
-    }
-    
-    chatMessages.value.push(aiMessage)
+    })
   } catch (error) {
     ElMessage.error('发送失败，请稍后重试')
   } finally {
     isChatLoading.value = false
   }
 }
-
-const generateAIResponse = (question) => {
-  const responses = {
-    '卡路里': '根据您今天的饮食记录，您摄入了约1250卡路里，这个数值在正常范围内。建议根据您的活动量适当调整。',
-    '营养': '您的营养搭配整体不错，建议增加蔬菜水果的摄入，保持饮食多样化。',
-    '减肥': '健康的减重需要控制总卡路里摄入，增加运动量。建议每天减少200-300卡路里，配合适量运动。',
-    '增重': '健康增重需要增加优质蛋白质和健康脂肪的摄入，建议多吃坚果、鱼类、瘦肉等。',
-    '早餐': '早餐是一天中最重要的一餐，建议包含蛋白质、复合碳水化合物和健康脂肪。',
-    '晚餐': '晚餐建议清淡一些，减少碳水化合物摄入，多吃蔬菜和优质蛋白质。'
-  }
-  
-  for (const [key, response] of Object.entries(responses)) {
-    if (question.includes(key)) {
-      return response
-    }
-  }
-  
-  return '感谢您的提问！根据您的饮食记录，我建议您保持均衡饮食，多吃新鲜蔬菜水果，适量运动。如果您有具体的营养问题，可以详细描述，我会为您提供更精准的建议。'
-}
-
+/**
+ * 格式化时间（仅用于聊天时间显示）
+ */
 const formatTime = (date) => {
   return new Date(date).toLocaleTimeString('zh-CN', {
     hour: '2-digit',
@@ -379,13 +585,24 @@ const formatTime = (date) => {
   })
 }
 
-onMounted(() => {
-  // 初始化时生成一次分析报告
-  generateAnalysis()
+
+// 页面挂载时先尝试获取分析报告（并可同时调用 loadTodayStats）
+// 当页面初次加载与切换周期时调用
+// 页面挂载初始化
+onMounted(async () => {
+  await generateAnalysis()
+  await initCharts()
+  await fetchTodayStats()
 })
 </script>
 
 <style scoped>
+
+.echart {
+  width: 100%;
+  height: 220px;
+}
+
 .ai-analysis-container {
   padding: 24px;
   background: #f8fafc;

@@ -7,17 +7,19 @@ import com.myproject.vo.UserLoginVO;
 import com.myproject.vo.UserInfoVO;
 import com.myproject.service.UserService;
 import com.myproject.result.ResponseResult;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/user")
+@RequiredArgsConstructor
 public class UserController {
 
     private final UserService userService;
 
-    public UserController(UserService userService) {
-        this.userService = userService;
-    }
+//    public UserController(UserService userService) {
+//        this.userService = userService;
+//    }
 
     @PostMapping("/register")
     public ResponseResult<String> register(@RequestBody UserRegisterDTO registerDTO) {

@@ -1,8 +1,8 @@
 spring:
   datasource:
-    url: jdbc:mysql://localhost:3306/template?useSSL=true&serverTimezone=UTC&characterEncoding=utf8
+    url: jdbc:mysql://localhost:3306/nutritrack?useSSL=true&serverTimezone=UTC&characterEncoding=utf8
     username: root
-    password: tiger123456
+    password: admin
   
   # 允许循环引用（解决Spring Security循环依赖问题）
   main:
@@ -27,8 +27,21 @@ springdoc:
 jwt:
   secret: my_super_secret_key_which_is_at_least_64_bytes_long_for_hs512_algorithm_security_requirements!
   expiration: 86400000 # 1天
+  token-prefix: Bearer
 
 mybatis-plus:
   configuration:
     map-underscore-to-camel-case: true
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+file:
+  # 图片文件夹的相对路径，相对于项目根目录
+  save-path: backend/src/main/resources/static/images/
+
+deepseek:
+  base-url: https://api.deepseek.com/v1
+  api-path: /chat/completions
+  api-key: ${DEEPSEEK_API_KEY:sk-f45d6f456f5243b2a721c25cbb093b0b}
+  model: deepseek-chat
+  max-prompt-chars: 3000
+
