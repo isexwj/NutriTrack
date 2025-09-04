@@ -201,11 +201,8 @@ public class CommunityServiceImpl implements CommunityService {
     @Override
     public ResponseResult<List<CommentVO>> getRecordComments(Long recordId) {
         try {
-            List<RecordComment> comments = recordCommentMapper.selectByRecordId(recordId);
-            List<CommentVO> commentVOs = comments.stream()
-                    .map(this::convertCommentToVO)
-                    .collect(Collectors.toList());
-            return ResponseResult.success(commentVOs);
+            // 返回已构建好的父子嵌套结构
+            return ResponseResult.success(getRecordCommentsVO(recordId));
         } catch (Exception e) {
             return ResponseResult.fail("获取评论失败: " + e.getMessage());
         }
