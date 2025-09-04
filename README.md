@@ -173,7 +173,92 @@ NutriTrack
 
 ---
 
+## 🔥 部署说明
+
+### 环境要求
+
+在部署NutriTrack应用之前，需要确保服务器满足以下环境要求：
+
+- Java 21 或更高版本
+- Node.js 16+ 或更高版本
+- MySQL 5.7+ 或更高版本
+- Maven 3.6+ 或更高版本
+- Nginx（用于前端静态资源部署和反向代理）
+
+### 后端部署步骤
+
+1. **数据库配置**
+   - 创建数据库：在MySQL中执行项目中的`NutriTrack.sql`文件
+   - 修改数据库配置：更新 `backend/src/main/resources/application.yml` 中的数据库连接信息
+     ```yaml
+     spring:
+       datasource:
+         url: jdbc:mysql://localhost:3306/nutritrack?useSSL=false&serverTimezone=UTC
+         username: your_username
+         password: your_password
+     ```
+
+2. **打包后端应用**
+   ```bash
+   cd backend
+   mvn clean package
+   ```
+
+   打包完成后，会在`target`目录下生成`backend-0.0.1-SNAPSHOT.jar`文件。
+
+3. **运行后端服务**
+   ```bash
+   java -jar target/backend-0.0.1-SNAPSHOT.jar
+   ```
+   
+
+### 前端部署步骤
+
+1. **构建前端项目**
+   ```bash
+   cd frontend
+   npm install
+   npm run build
+   ```
+
+   构建完成后，会在`dist`目录下生成所有静态资源文件。
+
+2. **部署前端资源**
+   - 将`dist`目录下的所有文件复制到Nginx的静态资源目录（通常是`/usr/share/nginx/html`）
+   - 配置Nginx反向代理，使API请求转发到后端服务
+
+3. **Nginx配置示例**
+   ```nginx
+   server {
+       listen 80;
+       server_name your_domain.com;
+       
+       location / {
+           root /usr/share/nginx/html;
+           index index.html;
+           try_files $uri $uri/ /index.html;
+       }
+       
+       location /api/ {
+           proxy_pass http://localhost:8080/;
+           proxy_set_header Host $host;
+           proxy_set_header X-Real-IP $remote_addr;
+           proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+       }
+   }
+   ```
+
+
+### 配置说明
+
+1. **JWT密钥配置**
+   在`application.yml`中配置JWT密钥：
+   ```yaml
+   jwt:
+     secret: your_jwt_secret_key
+     expiration: 86400000
+   ``` 
+
 ## 🤝 声明
 
 项目为2025年南开大学软件学院暑期实训项目，详细开发过程记录可见[NKU内部飞书文档](https://nankai.feishu.cn/wiki/RGetwpj7iisN5RkxtGQc6KgTnBc)🤗🤗
-

@@ -54,7 +54,9 @@ public class DailyDietAnalysisServiceImpl extends ServiceImpl<DailyDietAnalysisM
             ObjectMapper objectMapper = new ObjectMapper();
             return objectMapper.readValue(suggestionsJson, new TypeReference<List<String>>() {});
         } catch (Exception e) {
-            throw new RuntimeException("解析健康建议时出错", e);
+//            throw new RuntimeException("解析健康建议时出错", e);
+            return Collections.singletonList("解析健康建议时出错。");
+
         }
     }
 
