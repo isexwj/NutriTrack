@@ -1,12 +1,15 @@
 package com.myproject.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.myproject.entity.DailyDietAnalysis;
 import com.myproject.entity.User;
 import com.myproject.mapper.DailyDietAnalysisMapper;
 import com.myproject.mapper.UserMapper;
 import com.myproject.service.IDailyDietAnalysisService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.myproject.vo.DailyAnalysisReportVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -41,19 +44,13 @@ public class DailyDietAnalysisServiceImpl extends ServiceImpl<DailyDietAnalysisM
                         .last("LIMIT 1")  // 只取一条
         );
 
-        List<String> suggestions = new ArrayList<>();
-        if (latestAnalysis != null) {
-            if (latestAnalysis.getHealthSuggestions() != null && !latestAnalysis.getHealthSuggestions().isEmpty()) {
-                suggestions.add(latestAnalysis.getHealthSuggestions());
-            }
-            if (latestAnalysis.getImprovementSuggestions() != null && !latestAnalysis.getImprovementSuggestions().isEmpty()) {
-                suggestions.add(latestAnalysis.getImprovementSuggestions());
-            }
-            if (latestAnalysis.getNutritionSummary() != null && !latestAnalysis.getNutritionSummary().isEmpty()) {
-                suggestions.add(latestAnalysis.getNutritionSummary());
-            }
+        String suggestionsJson = latestAnalysis.getHealthSuggestions();
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            return objectMapper.readValue(suggestionsJson, new TypeReference<List<String>>() {});
+        } catch (Exception e) {
+            throw new RuntimeException("解析健康建议时出错", e);
         }
-        return suggestions;
     }
 
     @Override

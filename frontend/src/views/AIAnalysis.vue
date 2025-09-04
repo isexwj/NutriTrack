@@ -26,15 +26,15 @@
         <div class="card-content">
           <div class="overview-stats">
             <div class="stat-item">
-              <div class="stat-value">{{ todayStats.totalMeals }}</div>
+              <div class="stat-value">{{ todayStats.meals }}</div>
               <div class="stat-label">用餐次数</div>
             </div>
             <div class="stat-item">
-              <div class="stat-value">{{ todayStats.totalCalories }}</div>
+              <div class="stat-value">{{ todayStats.calories }}</div>
               <div class="stat-label">总卡路里</div>
             </div>
             <div class="stat-item">
-              <div class="stat-value">{{ todayStats.avgRating }}</div>
+              <div class="stat-value">{{ todayStats.rating }}</div>
               <div class="stat-label">平均评分</div>
             </div>
             <div class="stat-item">
@@ -241,6 +241,7 @@ import {
 } from '@/api/ai'
 
 import * as echarts from 'echarts'
+import {getTodayStats} from "@/api/meal.js";
 
 
 const caloriesChart = ref(null)
@@ -310,6 +311,17 @@ const loadTodayStats = async () => {
   // 若需要实现，请在 api/ai.js 中添加 getTodayStats 并在此调用
   // 这里保留空实现以免影响页面其它功能
 }
+
+const fetchTodayStats = async () => {
+  try {
+    const today = new Date().toISOString().split('T')[0]; // "2025-09-03"
+    const res = await getTodayStats(today)
+    todayStats.value = res.data // 需与后端返回格式一致
+  } catch (error) {
+    console.error('获取今日统计失败', error)
+  }
+}
+
 
 const initCharts = async () => {
   await nextTick()
@@ -580,6 +592,7 @@ const formatTime = (date) => {
 onMounted(async () => {
   await generateAnalysis()
   await initCharts()
+  await fetchTodayStats()
 })
 </script>
 
