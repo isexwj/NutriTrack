@@ -35,8 +35,9 @@ mybatis-plus:
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
 
 file:
-  # 图片文件夹的绝对路径 TODO: 需要修改
-  save-path: D:/大学/研一上/暑期编程实训/暑假编程大作业/NutriTrack/backend/src/main/resources/static/images/
+  # 图片文件夹的相对路径，相对于项目根目录
+  save-path: backend/src/main/resources/static/images/
+
 deepseek:
   base-url: https://api.deepseek.com/v1
   api-path: /chat/completions

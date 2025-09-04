@@ -299,10 +299,16 @@ const editMeal = (meal) => {
     description: meal.description,
     calories: meal.calories,
     rating: meal.rating,
-    images: meal.imageUrls ? meal.imageUrls.map((url, index) => ({
+    images: meal.images ? meal.images.map((image, index) => ({
       name: `image-${index}.jpg`,
-      url: url
-    })) : [],
+      url: getFullImageUrl(image.imageUrl),
+      status: 'success',
+      imageId: image.id // 保存图片ID用于删除
+    })) : (meal.imageUrls ? meal.imageUrls.map((url, index) => ({
+      name: `image-${index}.jpg`,
+      url: getFullImageUrl(url),
+      status: 'success'
+    })) : []),
     isShared: meal.isShared
   }
   console.log('设置后的mealForm.mealType:', mealForm.value.mealType)
@@ -359,18 +365,38 @@ const saveMeal = async () => {
     formData.append('rating', mealForm.value.rating)
     formData.append('isShared', mealForm.value.isShared)
 
-    // 添加图片文件
-    mealForm.value.images.forEach((file) => {
-      if (file.raw) {
-        formData.append('images', file.raw)
-      }
-    })
-
     if (editingMeal.value) {
       console.log('=== 保存编辑记录调试信息 ===')
       console.log('editingMeal.value:', editingMeal.value)
       console.log('editingMeal.value.id:', editingMeal.value.id, '类型:', typeof editingMeal.value.id)
       console.log('即将调用updateMealRecord，参数id:', editingMeal.value.id)
+      
+      // 处理编辑时的图片更新
+      const originalImages = editingMeal.value.images || []
+      const currentImages = mealForm.value.images || []
+      
+      // 找出被删除的图片（原始图片中不在当前图片列表中的）
+      const deletedImageIds = []
+      originalImages.forEach((originalImage) => {
+        const stillExists = currentImages.some(currentImg => 
+          currentImg.imageId === originalImage.id
+        )
+        if (!stillExists) {
+          deletedImageIds.push(originalImage.id)
+        }
+      })
+      
+      // 添加删除的图片ID到表单数据
+      deletedImageIds.forEach(id => {
+        formData.append('deletedImageIds', id)
+      })
+      
+      // 添加新上传的图片文件
+      currentImages.forEach((file) => {
+        if (file.raw) {
+          formData.append('newImages', file.raw)
+        }
+      })
       
       const res = await updateMealRecord(editingMeal.value.id, formData)
       if (res && res.code === 200) {
@@ -379,6 +405,13 @@ const saveMeal = async () => {
         ElMessage.error(res?.message || '更新失败')
       }
     } else {
+      // 添加图片文件
+      mealForm.value.images.forEach((file) => {
+        if (file.raw) {
+          formData.append('images', file.raw)
+        }
+      })
+      
       const res = await addMealRecord(formData)
       if (res && res.code === 200) {
         ElMessage.success('添加成功')

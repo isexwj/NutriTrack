@@ -25,7 +25,6 @@ export function getCommunityRanking() {
  *        - getDailyAnalysis(date)
  */
 
-import request from '@/utils/request'
 import { useUserStore } from '@/store/user'
 import axios from 'axios'
 
