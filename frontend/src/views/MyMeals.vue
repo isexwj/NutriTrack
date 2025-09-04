@@ -211,6 +211,8 @@ const mealForm = ref({
   calories: 0,
   rating: 5,
   images: [],
+  newImages: [],
+  deletedImageUrls: [],
   isShared: false
 })
 
@@ -294,15 +296,25 @@ const editMeal = (meal) => {
   console.log('meal.mealType:', meal.mealType, '类型:', typeof meal.mealType)
   
   editingMeal.value = meal
+
+  // 将原有图片转换为上传组件需要的格式，并记录URL
+  const originalImages = meal.imageUrls ? meal.imageUrls.map((url, index) => {
+    return {
+      name: `image-${index}.jpg`,
+      url: url,
+      isOriginal: true,
+      imageUrl: url // 记录图片URL
+    }
+  }) : []
+
   mealForm.value = {
     mealType: meal.mealType,
     description: meal.description,
     calories: meal.calories,
     rating: meal.rating,
-    images: meal.imageUrls ? meal.imageUrls.map((url, index) => ({
-      name: `image-${index}.jpg`,
-      url: url
-    })) : [],
+    images: originalImages,
+    newImages: [],
+    deletedImageUrls: [],
     isShared: meal.isShared
   }
   console.log('设置后的mealForm.mealType:', mealForm.value.mealType)
@@ -360,18 +372,26 @@ const saveMeal = async () => {
     formData.append('isShared', mealForm.value.isShared)
 
     // 添加图片文件
-    mealForm.value.images.forEach((file) => {
-      if (file.raw) {
-        formData.append('images', file.raw)
-      }
-    })
+    console.log('=== 编辑记录图片信息 ===')
+    console.log(mealForm.value.images)
 
     if (editingMeal.value) {
       console.log('=== 保存编辑记录调试信息 ===')
       console.log('editingMeal.value:', editingMeal.value)
       console.log('editingMeal.value.id:', editingMeal.value.id, '类型:', typeof editingMeal.value.id)
       console.log('即将调用updateMealRecord，参数id:', editingMeal.value.id)
-      
+
+      // 添加删除的图片URL
+      mealForm.value.deletedImageUrls.forEach(url => {
+        formData.append('deletedImageUrls', url)
+      })
+
+      // 添加新上传的图片
+      mealForm.value.newImages.forEach(file => {
+        formData.append('newImages', file)
+      })
+
+
       const res = await updateMealRecord(editingMeal.value.id, formData)
       if (res && res.code === 200) {
         ElMessage.success('更新成功')
@@ -379,6 +399,11 @@ const saveMeal = async () => {
         ElMessage.error(res?.message || '更新失败')
       }
     } else {
+      mealForm.value.newImages.forEach(file => {
+        formData.append('images', file)
+      })
+
+
       const res = await addMealRecord(formData)
       if (res && res.code === 200) {
         ElMessage.success('添加成功')
@@ -405,6 +430,8 @@ const resetForm = () => {
     calories: 0,
     rating: 5,
     images: [],
+    newImages: [],
+    deletedImageUrls: [],
     isShared: false
   }
   editingMeal.value = null
@@ -422,10 +449,30 @@ const handlePreview = (file) => {
 }
 
 const handleRemove = (file, fileList) => {
+  // 判断删除的是原有图片还是新上传的图片
+  if (file.isOriginal) {
+    // 删除的是原有图片，记录其URL到deletedImageUrls
+    if (file.imageUrl && !mealForm.value.deletedImageUrls.includes(file.imageUrl)) {
+      mealForm.value.deletedImageUrls.push(file.imageUrl)
+    }
+  } else {
+    // 删除的是新上传的图片，从newImages中移除
+    mealForm.value.newImages = mealForm.value.newImages.filter(
+        f => f.uid !== file.uid
+    )
+  }
+
+  // 更新当前显示的图片列表
   mealForm.value.images = fileList
 }
 
 const handleChange = (file, fileList) => {
+  // 新添加的图片（有raw属性）加入到newImages
+  if (file.raw) {
+    mealForm.value.newImages.push(file.raw)
+  }
+
+  // 更新当前显示的图片列表
   mealForm.value.images = fileList
 }
 

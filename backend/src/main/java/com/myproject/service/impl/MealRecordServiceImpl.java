@@ -185,15 +185,20 @@ public class MealRecordServiceImpl implements MealRecordService {
 
         mealRecordMapper.updateById(record);
 
-        // 处理删除的图片
-        if (updateDTO.getDeletedImageIds() != null && !updateDTO.getDeletedImageIds().isEmpty()) {
-            for (Long imageId : updateDTO.getDeletedImageIds()) {
-                MealImage image = mealImageMapper.selectById(imageId);
-                if (image != null && image.getRecordId().equals(id)) {
+        // 处理删除的图片 - 根据URL而不是ID
+        if (updateDTO.getDeletedImageUrls() != null && !updateDTO.getDeletedImageUrls().isEmpty()) {
+            for (String imageUrl : updateDTO.getDeletedImageUrls()) {
+                // 根据URL查找图片记录
+                QueryWrapper<MealImage> imageQueryWrapper = new QueryWrapper<>();
+                imageQueryWrapper.eq("record_id", id)
+                        .eq("image_url", imageUrl);
+                MealImage image = mealImageMapper.selectOne(imageQueryWrapper);
+
+                if (image != null) {
                     // 删除物理文件
                     deleteImageFile(image.getImageUrl());
                     // 删除数据库记录
-                    mealImageMapper.deleteById(imageId);
+                    mealImageMapper.deleteById(image.getId());
                 }
             }
         }
@@ -207,7 +212,7 @@ public class MealRecordServiceImpl implements MealRecordService {
                     .orderByDesc("upload_order")
                     .last("LIMIT 1");
             MealImage lastImage = mealImageMapper.selectOne(imageQueryWrapper);
-            int startOrder = lastImage != null ? lastImage.getUploadOrder() + 1 : 0;
+            int startOrder = lastImage != null ? lastImage.getUploadOrder() + 1 : 1;
 
             int order = startOrder;
             for (MultipartFile image : updateDTO.getNewImages()) {
@@ -226,19 +231,13 @@ public class MealRecordServiceImpl implements MealRecordService {
                         order++;
                     } catch (IOException e) {
                         // 记录错误日志，但不中断整个操作
+                        // log.error("图片保存失败: {}", e.getMessage());
                     }
                 }
             }
         }
 
         MealRecordVO result = convertToVO(record);
-        // 添加新图片的URL到返回结果
-        if (!newImageUrls.isEmpty()) {
-            List<String> allImageUrls = result.getImageUrls();
-            allImageUrls.addAll(newImageUrls);
-            result.setImageUrls(allImageUrls);
-        }
-
         return result;
     }
 

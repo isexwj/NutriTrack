@@ -17,5 +17,5 @@ public class MealRecordUpdateDTO {
     private LocalDate recordDate;
     private Boolean isShared;
     private List<MultipartFile> newImages; // 新上传的图片
-    private List<Long> deletedImageIds; // 要删除的图片ID
+    private List<String> deletedImageUrls; // 要删除的图片ID
 }
