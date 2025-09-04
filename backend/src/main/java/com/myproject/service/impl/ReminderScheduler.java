@@ -20,19 +20,19 @@ public class ReminderScheduler {
     private final UserMapper userMapper;
 
     // 早餐 08:00
-    @Scheduled(cron = "0 0 8 * * ?")
+    @Scheduled(cron = "0 0 7 * * ?")
     public void breakfastReminder() {
         sendSystemReminder("早餐时间到啦，记得记录今天的早餐哦~");
     }
 
     // 午餐 12:00
-    @Scheduled(cron = "0 0 12 * * ?")
+    @Scheduled(cron = "0 30 11 * * ?")
     public void lunchReminder() {
         sendSystemReminder("午餐时间到啦，别忘了打卡记录！");
     }
 
     // 晚餐 18:00
-    @Scheduled(cron = "0 0 18 * * ?")
+    @Scheduled(cron = "0 30 17 * * ?")
     public void dinnerReminder() {
         sendSystemReminder("晚餐时间到啦，保持清淡适量，及时记录~");
     }
