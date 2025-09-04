@@ -3,14 +3,16 @@
     <div class="form-wrapper">
       <div class="form-header">
         <h2>创建账户</h2>
-        <p>请填写以下信息完成注册</p>
+        <p v-if="step === 1">请填写账户信息</p>
+        <p v-else>请输入邮箱并完成验证码验证</p>
       </div>
       
       <el-form 
+        v-if="step === 1"
         :model="form" 
-        :rules="rules" 
-        ref="formRef" 
-        @submit.prevent="handleRegister"
+        :rules="rulesStep1" 
+        ref="formRef"
+        @submit.prevent="handleStep1"
         class="register-form"
       >
         <el-form-item prop="username">
@@ -21,7 +23,14 @@
             size="default"
           />
         </el-form-item>
-        
+        <el-form-item prop="nickname">
+          <el-input 
+            v-model="form.nickname" 
+            placeholder="请输入昵称（可与用户名相同）"
+            prefix-icon="User"
+            size="default"
+          />
+        </el-form-item>
         <el-form-item prop="password">
           <el-input 
             v-model="form.password" 
@@ -32,7 +41,6 @@
             show-password
           />
         </el-form-item>
-        
         <el-form-item prop="confirmPassword">
           <el-input 
             v-model="form.confirmPassword" 
@@ -43,18 +51,61 @@
             show-password
           />
         </el-form-item>
-        
         <el-form-item>
           <el-button 
             type="primary" 
-            @click="handleRegister" 
+            @click="handleStep1" 
             :loading="loading"
             size="default"
             class="submit-btn"
           >
-            {{ loading ? '注册中...' : '注册' }}
+            {{ loading ? '下一步...' : '下一步' }}
           </el-button>
         </el-form-item>
+      </el-form>
+
+      <el-form
+        v-else
+        :model="formStep2"
+        :rules="rulesStep2"
+        ref="formRef2"
+        @submit.prevent="handleStep2"
+        class="register-form"
+      >
+        <el-form-item prop="email">
+          <el-input
+            v-model="formStep2.email"
+            placeholder="请输入邮箱"
+            prefix-icon="Message"
+            size="default"
+          />
+        </el-form-item>
+        <el-form-item prop="emailCode">
+          <div style="display:flex; gap:8px; width:100%">
+            <el-input 
+              v-model="formStep2.emailCode"
+              placeholder="请输入邮箱验证码"
+              size="default"
+            />
+            <el-button :disabled="sendCountdown>0 || sending" @click="handleSendCode" style="white-space:nowrap; height:40px;">
+              {{ sending ? '发送中...' : (sendCountdown>0 ? sendCountdown + 's' : '发送验证码') }}
+            </el-button>
+          </div>
+        </el-form-item>
+        <el-form-item>
+          <el-button 
+            type="primary" 
+            @click="handleStep2" 
+            :loading="loading"
+            size="default"
+            class="submit-btn"
+          >
+            {{ loading ? '提交中...' : '完成注册' }}
+          </el-button>
+        </el-form-item>
+        <div class="form-footer" style="margin-top:-8px">
+          <el-button type="text" @click="step=1">上一步</el-button>
+        </div>
       </el-form>
       
       <div class="form-footer">
@@ -69,24 +120,38 @@
 
 <script setup>
 import { reactive, ref } from 'vue'
-import { register } from '@/api/user'
+import { registerStep1, registerEmailSend, registerStep2 } from '@/api/user'
 import { ElMessage } from 'element-plus'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
 const formRef = ref()
+const formRef2 = ref()
 const loading = ref(false)
+const sending = ref(false)
+const step = ref(1)
+const regToken = ref('')
+const sendCountdown = ref(0)
+let timer = null
 
 const form = reactive({
   username: '',
+  nickname: '',
   password: '',
   confirmPassword: ''
 })
+const formStep2 = reactive({
+  email: '',
+  emailCode: ''
+})
 
-const rules = {
+const rulesStep1 = {
   username: [
     { required: true, message: '请输入用户名', trigger: 'blur' },
     { min: 3, max: 20, message: '用户名长度在 3 到 20 个字符', trigger: 'blur' }
+  ],
+  nickname: [
+    { required: true, message: '请输入昵称', trigger: 'blur' }
   ],
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },
@@ -106,24 +171,83 @@ const rules = {
     }
   ]
 }
+const rulesStep2 = {
+  email: [
+    { required: true, message: '请输入邮箱', trigger: 'blur' },
+    { type: 'email', message: '邮箱格式不正确', trigger: 'blur' }
+  ],
+  emailCode: [
+    { required: true, message: '请输入邮箱验证码', trigger: 'blur' }
+  ]
+}
 
-const handleRegister = async () => {
+const handleStep1 = async () => {
   if (!formRef.value) return
-  
   try {
     await formRef.value.validate()
     loading.value = true
-    
-    const { confirmPassword, ...registerData } = form
-    await register(registerData)
-    
+    const payload = {
+      username: form.username,
+      password: form.password,
+      confirmPassword: form.confirmPassword,
+      nickname: form.nickname
+    }
+    const res = await registerStep1(payload)
+    regToken.value = res.data
+    step.value = 2
+    ElMessage.success('账户信息已保存，请绑定邮箱')
+  } catch (error) {
+    if (error.response?.data?.message) {
+      ElMessage.error(error.response.data.message)
+    } else {
+      ElMessage.error('提交失败，请重试')
+    }
+  } finally {
+    loading.value = false
+  }
+}
+
+const handleSendCode = async () => {
+  if (!formStep2.email) {
+    ElMessage.warning('请先输入邮箱')
+    return
+  }
+  try {
+    sending.value = true
+    await registerEmailSend({ regToken: regToken.value, email: formStep2.email })
+    ElMessage.success('验证码已发送，请查收邮箱')
+    sendCountdown.value = 60
+    timer = setInterval(() => {
+      sendCountdown.value--
+      if (sendCountdown.value <= 0) {
+        clearInterval(timer)
+        timer = null
+      }
+    }, 1000)
+  } catch (error) {
+    if (error.response?.data?.message) {
+      ElMessage.error(error.response.data.message)
+    } else {
+      ElMessage.error('发送失败，请重试')
+    }
+  } finally {
+    sending.value = false
+  }
+}
+
+const handleStep2 = async () => {
+  if (!formRef2.value) return
+  try {
+    await formRef2.value.validate()
+    loading.value = true
+    await registerStep2({ regToken: regToken.value, email: formStep2.email, emailCode: formStep2.emailCode })
     ElMessage.success('注册成功，请登录')
     router.push('/login')
   } catch (error) {
     if (error.response?.data?.message) {
       ElMessage.error(error.response.data.message)
     } else {
-      ElMessage.error('注册失败，请重试')
+      ElMessage.error('提交失败，请重试')
     }
   } finally {
     loading.value = false

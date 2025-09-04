@@ -8,10 +8,25 @@ const service = axios.create({
 
 // 请求拦截器
 service.interceptors.request.use(config => {
-  const userStore = useUserStore()
+  const publicPaths = [
+    '/user/login',
+    '/user/captcha',
+    '/user/register',
+    '/user/register/step1',
+    '/user/register/email/send',
+    '/user/register/step2',
+    '/user/forget-password',
+    '/user/forget-password/send',
+    '/user/forget-password/reset'
+  ]
+  const isPublic = publicPaths.some(p => (config.url || '').startsWith(p))
+
+  if (!isPublic) {
+    const userStore = useUserStore()
     const token = userStore.token || localStorage.getItem('token')
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
   }
   return config
 }, error => {

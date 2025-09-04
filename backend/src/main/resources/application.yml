@@ -2,11 +2,33 @@ spring:
   datasource:
     url: jdbc:mysql://localhost:3306/nutritrack?useSSL=true&serverTimezone=UTC&characterEncoding=utf8
     username: root
-    password: admin
-  
+    password: tiger123456
+  # Redis 配置（TODO: 按你的环境修改 host/password）
+  data:
+    redis:
+      host: 127.0.0.1 # TODO: 修改为你的 Redis 主机
+      port: 6379
+      password: ${REDIS_PASSWORD:} # TODO: 如有密码请设置,(一般redis不用设置密码)
+      database: 0
+      timeout: 2000
+  mail:
+    host: smtp.163.com # TODO: 修改为你的 SMTP 服务器
+    port: 465
+    username: ${MAIL_USERNAME:wenjie_xuee2025@163.com} # TODO: 设置真实账号
+    password: ${MAIL_PASSWORD:KXuVfqwmifTX2Ebv} # TODO: 设置真实密码/授权码
+    properties:
+      mail:
+        smtp:
+          auth: true
+          ssl:
+            enable: true
   # 允许循环引用（解决Spring Security循环依赖问题）
   main:
     allow-circular-references: true
+
+# 邮件配置（TODO: 按你的邮箱服务商修改）
+mail:
+  from: ${MAIL_FROM:wenjie_xuee2025@163.com}
 
 server:
   port: 8080
@@ -44,4 +66,10 @@ deepseek:
   api-key: ${DEEPSEEK_API_KEY:sk-f45d6f456f5243b2a721c25cbb093b0b}
   model: deepseek-chat
   max-prompt-chars: 3000
+
+
+
+
+
+
 
