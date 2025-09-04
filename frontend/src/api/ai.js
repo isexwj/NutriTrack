@@ -29,10 +29,12 @@ import { useUserStore } from '@/store/user'
 import axios from 'axios'
 
 // 发送用户问题给 AI，返回 AI 回复
-export const chatWithAI = async ({ question }) => {
-    return axios.post('http://localhost:8080/api/ai/chat', { question }, {
-        withCredentials: true // 如果后端需要 cookie/session
-    })
+export const chatWithAI = async ({ question, userId, username }) => {
+    return axios.post(
+        'http://localhost:8080/api/ai/chat',
+        { question, userId, username },
+        { withCredentials: true }
+    )
 }
 
 export function getDailyAnalysis(date) {
