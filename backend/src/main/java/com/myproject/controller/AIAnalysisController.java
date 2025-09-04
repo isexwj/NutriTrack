@@ -44,18 +44,36 @@ public class AIAnalysisController {
      * - 后端会把当日报告作为隐藏上下文加入给第三方 AI，前端只会得到 AI 的回答文本
      */
     @PostMapping("/chat")
-    public ResponseResult<ChatMessageVO> chat(@RequestBody ChatRequestDTO request, Principal principal) {
-        String username = (principal == null) ? null : principal.getName();
-        log.info("收到 /api/ai/chat 请求, username={}, questionLen={}", username, request.getQuestion() == null ? 0 : request.getQuestion().length());
+    public ResponseResult<ChatMessageVO> chat(
+            @RequestBody ChatRequestDTO request,
+            @RequestHeader(value = "X-Username", required = false) String headerUsername,
+            Principal principal) {
+        // 优先使用 body 中的 username（前端可传）
+        String username = request.getUsername();
+        if (username == null || username.trim().isEmpty()) {
+            // 再试 header
+            username = headerUsername;
+        }
+        if (username == null || username.trim().isEmpty()) {
+            // 最后再试 Principal（若用户已登录）
+            username = (principal == null) ? null : principal.getName();
+        }
+
+        // 如果前端传了 userId，优先使用（可选）
+        Long userId = request.getUserId();
+
+        log.info("收到 /api/ai/chat 请求, username={}, userId={}, questionLen={}",
+                username, userId, request.getQuestion() == null ? 0 : request.getQuestion().length());
 
         try {
-            ChatMessageVO vo = aiAnalysisService.chatWithAI(null, username, request.getQuestion());
+            ChatMessageVO vo = aiAnalysisService.chatWithAI(userId, username, request.getQuestion());
             return ResponseResult.success(vo);
         } catch (Exception e) {
             log.error("处理 /api/ai/chat 失败", e);
             return ResponseResult.fail("AI 聊天失败：" + e.getMessage());
         }
     }
+
 
     /**
      * 新增：GET /api/ai/trend?period=7d|30d|3m (默认 7d)

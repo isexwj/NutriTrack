@@ -12,6 +12,7 @@ import com.myproject.mapper.MealRecordMapper;
 import com.myproject.service.MealRecordService;
 import com.myproject.vo.MealRecordVO;
 import com.myproject.vo.MealImageVO;
+import com.myproject.service.AIAnalysisService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +20,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.transaction.support.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -30,6 +34,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 public class MealRecordServiceImpl implements MealRecordService {
@@ -40,10 +45,59 @@ public class MealRecordServiceImpl implements MealRecordService {
     @Autowired
     private MealImageMapper mealImageMapper;
 
+    // 新增注入 AI 服务
+    @Autowired
+    private AIAnalysisService aiService;
+
+    private static final Logger log = LoggerFactory.getLogger(MealRecordServiceImpl.class);
+
     // 图片存储路径
     @Value("${file.save-path}") // 注入配置文件中定义的文件保存路径
     private String IMAGE_UPLOAD_DIR;
     //private final String IMAGE_UPLOAD_DIR = "src/main/resources/static.images/";
+
+    /**
+     * 在当前事务提交后（或立即）触发生成/更新当天AI报告（不会阻塞主线程）。
+     * userId: 必须非 null
+     * date: 如果为 null 会使用 LocalDate.now()
+     */
+    private void scheduleDailyReportGeneration(Long userId, LocalDate date) {
+        if (userId == null) {
+            log.warn("scheduleDailyReportGeneration called with null userId, skip");
+            return;
+        }
+
+        final Long uidForSync = userId;
+        final LocalDate dateForSync = date == null ? LocalDate.now() : date;
+
+        // 如果事务同步可用，注册 afterCommit 回调
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    // 异步执行，不阻塞请求线程
+                    CompletableFuture.runAsync(() -> {
+                        try {
+                            aiService.getOrGenerateDailyAnalysis(uidForSync, null, dateForSync);
+                            log.info("Triggered AI report generation after commit: userId={}, date={}", uidForSync, dateForSync);
+                        } catch (Exception e) {
+                            log.error("自动生成/更新当天 AI 报告失败 (afterCommit) userId={}, date={}", uidForSync, dateForSync, e);
+                        }
+                    });
+                }
+            });
+        } else {
+            // 没有事务同步（极少数情况），直接异步调用（避免阻塞）
+            CompletableFuture.runAsync(() -> {
+                try {
+                    aiService.getOrGenerateDailyAnalysis(uidForSync, null, dateForSync);
+                    log.debug("Triggered AI report generation (no transaction sync): userId={}, date={}", uidForSync, dateForSync);
+                } catch (Exception e) {
+                    log.error("自动生成/更新当天 AI 报告失败 (no sync) userId={}, date={}", uidForSync, dateForSync, e);
+                }
+            });
+        }
+    }
 
     @Override
     @Transactional
@@ -95,6 +149,8 @@ public class MealRecordServiceImpl implements MealRecordService {
             BeanUtils.copyProperties(mealRecord, result);
             result.setIsShared(mealRecord.getIsShared() == 1);
             result.setImageUrls(imageUrls);
+
+            scheduleDailyReportGeneration(mealRecord.getUserId(), mealRecord.getRecordDate());
 
             return result;
         } catch (Exception e) {
@@ -240,6 +296,8 @@ public class MealRecordServiceImpl implements MealRecordService {
             result.setImageUrls(allImageUrls);
         }
 
+        scheduleDailyReportGeneration(record.getUserId(), record.getRecordDate());
+
         return result;
     }
 
@@ -263,6 +321,7 @@ public class MealRecordServiceImpl implements MealRecordService {
 
         // 删除饮食记录
         mealRecordMapper.deleteById(id);
+        scheduleDailyReportGeneration(record.getUserId(), record.getRecordDate());
     }
 
     @Override
