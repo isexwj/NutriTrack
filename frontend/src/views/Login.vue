@@ -13,10 +13,10 @@
         @submit.prevent="handleLogin"
         class="login-form"
       >
-        <el-form-item prop="username">
+        <el-form-item prop="identifier">
           <el-input 
-            v-model="form.username" 
-            placeholder="请输入用户名"
+            v-model="form.identifier" 
+            placeholder="请输入用户名或邮箱"
             prefix-icon="User"
             size="default"
           />
@@ -33,6 +33,17 @@
           />
         </el-form-item>
         
+        <el-form-item prop="captchaCode">
+          <div style="display:flex; gap:8px; width:100%; align-items:center;">
+            <el-input 
+              v-model="form.captchaCode"
+              placeholder="请输入验证码"
+              size="default"
+            />
+            <img :src="captcha.imageBase64" @click="refreshCaptcha" style="height:40px; cursor:pointer; border-radius:6px;" title="点击刷新"/>
+          </div>
+        </el-form-item>
+
         <el-form-item>
           <el-button 
             type="primary" 
@@ -62,7 +73,7 @@
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/store/user'
-import { login } from '@/api/user'
+import { login, getCaptcha } from '@/api/user'
 import { ElMessage } from 'element-plus'
 
 const router = useRouter()
@@ -71,20 +82,35 @@ const formRef = ref()
 const loading = ref(false)
 
 const form = reactive({
-  username: '',
-  password: ''
+  identifier: '',
+  password: '',
+  captchaId: '',
+  captchaCode: ''
 })
+const captcha = reactive({ imageBase64: '' })
 
 const rules = {
-  username: [
-    { required: true, message: '请输入用户名', trigger: 'blur' },
-    { min: 3, max: 20, message: '用户名长度在 3 到 20 个字符', trigger: 'blur' }
+  identifier: [
+    { required: true, message: '请输入用户名或邮箱', trigger: 'blur' }
   ],
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },
     { min: 6, message: '密码长度不能少于 6 个字符', trigger: 'blur' }
+  ],
+  captchaCode: [
+    { required: true, message: '请输入验证码', trigger: 'blur' }
   ]
 }
+
+const refreshCaptcha = async () => {
+  const res = await getCaptcha('login')
+  if (res?.data) {
+    form.captchaId = res.data.captchaId
+    captcha.imageBase64 = res.data.imageBase64
+  }
+}
+
+refreshCaptcha()
 
 const handleLogin = async () => {
   if (!formRef.value) return
@@ -93,7 +119,12 @@ const handleLogin = async () => {
     await formRef.value.validate()
     loading.value = true
     
-    const res = await login(form)
+    const res = await login({
+      identifier: form.identifier,
+      password: form.password,
+      captchaId: form.captchaId,
+      captchaCode: form.captchaCode
+    })
     
     if (res.code === 200 && res.data) {
       userStore.setUser(res.data.token, res.data.username)
@@ -117,6 +148,7 @@ const handleLogin = async () => {
     } else {
       ElMessage.error('登录失败，请检查用户名和密码')
     }
+    refreshCaptcha()
   } finally {
     loading.value = false
   }

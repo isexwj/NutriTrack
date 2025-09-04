@@ -3,7 +3,7 @@
     <div class="form-wrapper">
       <div class="form-header">
         <h2>重置密码</h2>
-        <p>请输入用户名和新密码来重置您的账户密码</p>
+        <p>通过邮箱验证码验证身份并设置新密码</p>
       </div>
       
       <el-form 
@@ -13,15 +13,28 @@
         @submit.prevent="handleResetPassword"
         class="reset-form"
       >
-        <el-form-item prop="username">
+        <el-form-item prop="email">
           <el-input 
-            v-model="form.username" 
-            placeholder="请输入用户名"
-            prefix-icon="User"
+            v-model="form.email" 
+            placeholder="请输入邮箱"
+            prefix-icon="Message"
             size="default"
           />
         </el-form-item>
-        
+
+        <el-form-item prop="emailCode">
+          <div style="display:flex; gap:8px; width:100%">
+            <el-input 
+              v-model="form.emailCode"
+              placeholder="请输入邮箱验证码"
+              size="default"
+            />
+            <el-button :disabled="sendCountdown>0 || sending" @click="handleSendCode" style="white-space:nowrap; height:40px;">
+              {{ sending ? '发送中...' : (sendCountdown>0 ? sendCountdown + 's' : '发送验证码') }}
+            </el-button>
+          </div>
+        </el-form-item>
+
         <el-form-item prop="newPassword">
           <el-input 
             v-model="form.newPassword" 
@@ -72,7 +85,7 @@
 
 <script setup>
 import { reactive, ref } from 'vue'
-import { forgetPassword } from '@/api/user'
+import { forgetPasswordSend, forgetPasswordReset } from '@/api/user'
 import { ElMessage } from 'element-plus'
 import { useRouter } from 'vue-router'
 import { ArrowLeft } from '@element-plus/icons-vue'
@@ -80,17 +93,24 @@ import { ArrowLeft } from '@element-plus/icons-vue'
 const router = useRouter()
 const formRef = ref()
 const loading = ref(false)
+const sending = ref(false)
+const sendCountdown = ref(0)
+let timer = null
 
 const form = reactive({
-  username: '',
+  email: '',
+  emailCode: '',
   newPassword: '',
   confirmPassword: ''
 })
 
 const rules = {
-  username: [
-    { required: true, message: '请输入用户名', trigger: 'blur' },
-    { min: 3, max: 20, message: '用户名长度在 3 到 20 个字符', trigger: 'blur' }
+  email: [
+    { required: true, message: '请输入邮箱', trigger: 'blur' },
+    { type: 'email', message: '邮箱格式不正确', trigger: 'blur' }
+  ],
+  emailCode: [
+    { required: true, message: '请输入邮箱验证码', trigger: 'blur' }
   ],
   newPassword: [
     { required: true, message: '请输入新密码', trigger: 'blur' },
@@ -111,20 +131,47 @@ const rules = {
   ]
 }
 
+const handleSendCode = async () => {
+  if (!form.email) {
+    ElMessage.warning('请先输入邮箱')
+    return
+  }
+  try {
+    sending.value = true
+    await forgetPasswordSend({ email: form.email })
+    ElMessage.success('验证码已发送，请查收邮箱')
+    sendCountdown.value = 60
+    timer = setInterval(() => {
+      sendCountdown.value--
+      if (sendCountdown.value <= 0) {
+        clearInterval(timer)
+        timer = null
+      }
+    }, 1000)
+  } catch (error) {
+    if (error.response?.data?.message) {
+      ElMessage.error(error.response.data.message)
+    } else {
+      ElMessage.error('发送失败，请重试')
+    }
+  } finally {
+    sending.value = false
+  }
+}
+
 const handleResetPassword = async () => {
   if (!formRef.value) return
   
   try {
     await formRef.value.validate()
     loading.value = true
-    
-    await forgetPassword({
-      username: form.username,
-      newPassword: form.newPassword
-    })
-    
-    ElMessage.success('密码重置成功，请使用新密码登录')
-    router.push('/login')
+    const res = await forgetPasswordReset({ email: form.email, emailCode: form.emailCode, newPassword: form.newPassword, confirmPassword: form.confirmPassword })
+    if (res && res.code === 200) {
+      ElMessage.success('密码重置成功，请使用新密码登录')
+      router.push('/login')
+    } else {
+      ElMessage.error(res?.message || '密码重置失败，请检查验证码')
+    }
   } catch (error) {
     if (error.response?.data?.message) {
       ElMessage.error(error.response.data.message)

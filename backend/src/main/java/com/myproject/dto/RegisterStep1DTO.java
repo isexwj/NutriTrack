@@ -3,16 +3,19 @@ package com.myproject.dto;
 import lombok.Data;
 
 @Data
-public class UserLoginDTO {
-    // 可传用户名或邮箱，若为空则回退到 username
-    private String identifier;
+public class RegisterStep1DTO {
 
     private String username;
 
     private String password;
 
-    // 登录验证码
+    private String confirmPassword;
+
+    private String nickname;
+
     private String captchaId;
 
     private String captchaCode;
 }
+
+
