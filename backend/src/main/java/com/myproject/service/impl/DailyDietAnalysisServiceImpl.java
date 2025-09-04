@@ -44,6 +44,11 @@ public class DailyDietAnalysisServiceImpl extends ServiceImpl<DailyDietAnalysisM
                         .last("LIMIT 1")  // 只取一条
         );
 
+        if (latestAnalysis == null) {
+            // 返回默认回复
+            return Collections.singletonList("请发布饮食记录或手动生成AI总结。");
+        }
+
         String suggestionsJson = latestAnalysis.getHealthSuggestions();
         try {
             ObjectMapper objectMapper = new ObjectMapper();
