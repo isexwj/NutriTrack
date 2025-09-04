@@ -301,7 +301,7 @@ const editMeal = (meal) => {
   const originalImages = meal.imageUrls ? meal.imageUrls.map((url, index) => {
     return {
       name: `image-${index}.jpg`,
-      url: url,
+      url: getFullImageUrl(url),
       isOriginal: true,
       imageUrl: url // 记录图片URL
     }
