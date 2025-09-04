@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 public class User {
 
     /**
-     * 用户唯一ID
+     * 用户唯一ID (主键,自增)
      */
     @TableId(type = IdType.AUTO)
     private Long id;

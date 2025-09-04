@@ -144,49 +144,32 @@ const activeMenu = ref('dashboard')
 // 消息提示相关
 const showNotification = ref(false)
 
-// 示例消息数据
-const notifications = ref([
-  {
-    id: 1,
-    type: 'meal',
-    title: '用餐提醒',
-    message: '该吃早餐了！记得记录您的早餐内容哦~',
-    time: '2分钟前',
-    read: false
-  },
-  {
-    id: 2,
-    type: 'meal',
-    title: '用餐提醒',
-    message: '午餐时间到了，别忘了打卡记录！',
-    time: '1小时前',
-    read: false
-  },
-  {
-    id: 3,
-    type: 'system',
-    title: '系统通知',
-    message: '欢迎使用NutriTrack！开始记录您的健康饮食吧。',
-    time: '3小时前',
-    read: true
-  },
-  {
-    id: 4,
-    type: 'meal',
-    title: '用餐提醒',
-    message: '晚餐时间到了，记得记录您的晚餐内容！',
-    time: '5小时前',
-    read: true
-  },
-  {
-    id: 5,
-    type: 'system',
-    title: '健康建议',
-    message: '您今天还没有记录任何餐食，记得按时用餐哦！',
-    time: '昨天',
-    read: true
+import { listNotifications, markNotificationRead, markAllNotificationsRead } from '@/api/user'
+
+const notifications = ref([])
+
+const mapNotificationToView = (n) => {
+  // n.notificationType: meal_reminder/system/like/comment
+  const type = n.notificationType === 'meal_reminder' ? 'meal' : (n.notificationType === 'system' ? 'system' : 'system')
+  return {
+    id: n.id,
+    type,
+    title: n.notificationType === 'like' ? '点赞提醒' : (n.notificationType === 'comment' ? '评论提醒' : (n.notificationType === 'meal_reminder' ? '用餐提醒' : '系统通知')),
+    message: n.content,
+    time: new Date(n.createdAt).toLocaleString(),
+    read: n.isRead === 1,
+    raw: n
   }
-])
+}
+
+const fetchNotifications = async () => {
+  const username = userStore.username || localStorage.getItem('username')
+  if (!username) return
+  const res = await listNotifications(username)
+  // 后端统一返回 ResponseResult
+  const list = res.data || res
+  notifications.value = list.map(mapNotificationToView)
+}
 
 // 计算未读消息数量
 const unreadCount = computed(() => {
@@ -223,24 +206,32 @@ const switchMenu = (menuKey) => {
 // 消息提示相关方法
 const toggleNotification = () => {
   showNotification.value = !showNotification.value
+  if (showNotification.value) {
+    fetchNotifications()
+  }
 }
 
 const closeNotification = () => {
   showNotification.value = false
 }
 
-const markAsRead = (notificationId) => {
+const markAsRead = async (notificationId) => {
   const notification = notifications.value.find(n => n.id === notificationId)
-  if (notification) {
-    notification.read = true
-  }
+  if (!notification) return
+  await markNotificationRead(notificationId)
+  notification.read = true
 }
 
-const markAllAsRead = () => {
-  notifications.value.forEach(notification => {
-    notification.read = true
-  })
+const markAllAsRead = async () => {
+  const username = userStore.username || localStorage.getItem('username')
+  if (!username) return
+  await markAllNotificationsRead(username)
+  notifications.value.forEach(n => n.read = true)
 }
+
+onMounted(() => {
+  fetchNotifications()
+})
 
 // 处理用户下拉菜单命令
 const handleCommand = (command) => {

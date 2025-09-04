@@ -24,3 +24,16 @@ export function deactivateAccount(username) {
 export function forgetPassword(data) {
   return request.post('/user/forget-password', data)
 }
+
+// 通知相关
+export function listNotifications(username) {
+  return request.get('/notifications', { params: { username } })
+}
+
+export function markNotificationRead(id) {
+  return request.post(`/notifications/${id}/read`)
+}
+
+export function markAllNotificationsRead(username) {
+  return request.post('/notifications/read-all', null, { params: { username } })
+}

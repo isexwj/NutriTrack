@@ -2,6 +2,7 @@ package com.myproject.entity;
 
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 import com.myproject.enums.NotificationType;
@@ -16,7 +17,7 @@ import java.time.LocalDateTime;
 @Data
 @TableName("notifications")
 public class Notification {
-    @TableId
+    @TableId(type = IdType.AUTO)
     @TableField("id")
     private Long id;
 

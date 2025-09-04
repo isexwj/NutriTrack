@@ -114,7 +114,7 @@
               </el-button>
               <el-button type="text" @click="toggleComments(post)">
                 <el-icon><ChatDotRound /></el-icon>
-                {{ post.comments.length }}
+                {{ getTotalComments(post) }}
               </el-button>
               <el-button type="text" @click="sharePost(post)">
                 <el-icon><Share /></el-icon>
@@ -126,33 +126,62 @@
           <!-- 评论区域 -->
           <div v-if="post.showComments" class="comments-section">
             <div class="comments-list">
-              <div 
-                v-for="comment in post.comments" 
-                :key="comment.id"
-                class="comment-item"
-              >
-                <el-avatar :size="24" class="comment-avatar">
-                  {{ comment.user.username.charAt(0).toUpperCase() }}
-                </el-avatar>
-                <div class="comment-content">
-                  <div class="comment-header">
-                    <span class="comment-user">{{ comment.user.username }}</span>
-                    <span class="comment-time">{{ formatTime(comment.createdAt) }}</span>
+              <template v-for="comment in post.comments" :key="comment.id">
+                <div class="comment-item">
+                  <el-avatar :size="24" class="comment-avatar">
+                    {{ comment.user.username.charAt(0).toUpperCase() }}
+                  </el-avatar>
+                  <div class="comment-content">
+                    <div class="comment-header">
+                      <span class="comment-user">{{ comment.user.username }}</span>
+                      <span class="comment-time">{{ formatTime(comment.createdAt) }}</span>
+                    </div>
+                    <div class="comment-text">{{ comment.content }}</div>
+                    <div class="comment-actions">
+                      <el-button link size="small" @click="startReply(post, comment)">回复</el-button>
+                    </div>
+                    <div v-if="comment.replies && comment.replies.length" class="reply-list">
+                      <div v-for="reply in getDisplayedReplies(comment)" :key="reply.id" class="reply-item">
+                        <el-avatar :size="20" class="comment-avatar">
+                          {{ reply.user.username.charAt(0).toUpperCase() }}
+                        </el-avatar>
+                        <div class="comment-content">
+                          <div class="comment-header">
+                            <span class="comment-user">
+                              <span class="reply-chain">{{ reply.user.username }} > {{ reply.toUserName }}</span>
+                            </span>
+                            <span class="comment-time">{{ formatTime(reply.createdAt) }}</span>
+                          </div>
+                          <div class="comment-text">{{ reply.content }}</div>
+                          <div class="comment-actions">
+                            <el-button link size="small" @click="startReply(post, reply)">回复</el-button>
+                          </div>
+                        </div>
+                      </div>
+                      <div v-if="getHiddenReplyCount(comment) > 0" class="toggle-replies">
+                        <el-button link size="small" @click="comment.showAllReplies = !comment.showAllReplies">
+                          {{ comment.showAllReplies ? '收起回复' : `显示全部回复(${getHiddenReplyCount(comment)})` }}
+                        </el-button>
+                      </div>
+                    </div>
                   </div>
-                  <div class="comment-text">{{ comment.content }}</div>
                 </div>
-              </div>
+              </template>
             </div>
             <div class="comment-input">
               <el-input
                 v-model="post.newComment"
-                placeholder="写下您的评论..."
+                :placeholder="post.replyTo ? `回复 @${post.replyTo.user.username}：` : '写下您的评论...'"
                 @keyup.enter="addComment(post)"
               >
                 <template #append>
                   <el-button @click="addComment(post)">发送</el-button>
                 </template>
               </el-input>
+              <div v-if="post.replyTo" class="replying-tip">
+                正在回复 @{{ post.replyTo.user.username }}
+                <el-button link size="small" @click="cancelReply(post)">取消</el-button>
+              </div>
             </div>
           </div>
         </div>
@@ -255,17 +284,35 @@ const filteredPosts = computed(() => {
 })
 
 // 方法
+const getTotalComments = (post) => {
+  if (!post.comments) return 0
+  let total = 0
+  const stack = [...post.comments]
+  while (stack.length) {
+    const c = stack.pop()
+    total += 1
+    if (c.replies && c.replies.length) {
+      stack.push(...c.replies)
+    }
+  }
+  return total
+}
 const fetchCommunityRecords = async () => {
   try {
     loading.value = true;
     const response = await communityApi.getCommunityRecords(localStorage.getItem('username'));
-    posts.value = response.data.map(post => ({
-      ...post,
-      // 拼接完整图片URL
-      images: post.images ? post.images.map(img => getFullImageUrl(img)) : [],
-      showComments: false,
-      newComment: ''
-    }));
+    posts.value = response.data.map(post => {
+      const enhanced = {
+        ...post,
+        // 拼接完整图片URL
+        images: post.images ? post.images.map(img => getFullImageUrl(img)) : [],
+        showComments: false,
+        newComment: ''
+      }
+      // 增强评论树：初始化折叠与 toUserName，并将多级回复扁平到二级列表
+      if (enhanced.comments) enhanceCommentsRoot(enhanced.comments)
+      return enhanced
+    });
   } catch (error) {
     console.error('获取社区记录失败:', error);
     ElMessage.error('获取社区记录失败: ' + error.message);
@@ -371,6 +418,9 @@ const toggleLike = (post) => {
 
 const toggleComments = (post) => {
   post.showComments = !post.showComments
+  if (post.showComments) {
+    reloadComments(post)
+  }
 }
 
 const addComment = async (post) => {
@@ -388,23 +438,15 @@ const addComment = async (post) => {
         post.id,           // recordId: 当前记录的ID
         username,          // username: 评论者用户名
         post.newComment,   // content: 评论内容
-        null               // parentCommentId: 可选参数，这里设为null
+        post.replyTo ? String(post.replyTo.id) : null               // parentCommentId: 可选参数
     );
 
     if (response.code === 200) {
-      // 使用后端返回的真实评论数据
-      const newComment = {
-        id: response.data.id,           // 使用后端生成的ID
-        user: response.data.user,       // 使用后端返回的用户信息
-        content: response.data.content, // 使用后端处理后的内容
-        createdAt: new Date() // 使用后端的时间戳
-      };
-
-      // 添加到评论列表
-      post.comments.push(newComment);
-      post.newComment = '';
-      ElMessage.success('评论成功');
-
+      // 以服务端为准，重新拉取评论，确保使用真实自增ID
+      await reloadComments(post)
+      post.newComment = ''
+      post.replyTo = null
+      ElMessage.success('评论成功')
     } else {
       ElMessage.error(response.message || '评论失败');
     }
@@ -434,6 +476,80 @@ const previewImage = (images, index) => {
   previewImages.value = images
   previewIndex.value = index
   showImagePreview.value = true
+}
+
+const findCommentById = (list, id) => {
+  for (const c of list) {
+    if (String(c.id) === String(id)) return c
+    if (c.replies && c.replies.length) {
+      const found = findCommentById(c.replies, id)
+      if (found) return found
+    }
+  }
+  return null
+}
+
+const startReply = async (post, targetComment) => {
+  // 确保使用服务端的最新数据对象
+  await reloadComments(post)
+  const fresh = findCommentById(post.comments, targetComment.id)
+  post.replyTo = fresh || targetComment
+}
+
+const cancelReply = (post) => {
+  post.replyTo = null
+}
+
+// 仅展示前N条（默认2条），点击“显示全部”展开
+const DISPLAY_REPLY_COUNT = 2
+const getDisplayedReplies = (comment) => {
+  if (!comment.replies) return []
+  return comment.showAllReplies ? comment.replies : comment.replies.slice(0, DISPLAY_REPLY_COUNT)
+}
+
+const getHiddenReplyCount = (comment) => {
+  if (!comment.replies) return 0
+  const hidden = comment.replies.length - DISPLAY_REPLY_COUNT
+  return hidden > 0 ? hidden : 0
+}
+
+// 从后端重拉评论（保证 parentCommentId 与 id 一致，避免外键错误）
+const reloadComments = async (post) => {
+  try {
+    const res = await communityApi.getRecordComments(post.id)
+    // 后端返回已组装好的树形 CommentVO
+    post.comments = (res.data || res) || []
+    enhanceCommentsRoot(post.comments)
+  } catch (e) {
+    console.error('刷新评论失败', e)
+  }
+}
+
+// 规则：仅显示两级。更多层级全部扁平到直属顶层评论的二级 replies 中
+const enhanceCommentsRoot = (rootComments) => {
+  const flattenToLevel2 = (node, parentTop, parentUser) => {
+    // node 属于 parentTop 的二级项时，补 toUserName=被回复者
+    if (!parentTop.replies) parentTop.replies = []
+    const level2 = {
+      ...node,
+      toUserName: parentUser,
+    }
+    level2.showAllReplies = false
+    // 清空自身replies（会在下面把更深层也打平到 parentTop）
+    level2.replies = []
+    parentTop.replies.push(level2)
+    // 递归把 node 的子级继续打平成 parentTop 的二级
+    if (node.replies && node.replies.length) {
+      node.replies.forEach(child => flattenToLevel2(child, parentTop, node.user?.username))
+    }
+  }
+
+  rootComments.forEach(top => {
+    top.showAllReplies = false
+    const original = top.replies || []
+    top.replies = []
+    original.forEach(r => flattenToLevel2(r, top, top.user?.username))
+  })
 }
 </script>
 
@@ -773,6 +889,33 @@ const previewImage = (images, index) => {
   color: #374151;
   font-size: 13px;
   line-height: 1.4;
+}
+
+.comment-actions .el-button {
+  color: #9ca3af; /* 更浅的灰色 */
+}
+
+.reply-list {
+  margin-top: 8px;
+  padding-left: 32px;
+}
+
+.toggle-replies {
+  margin-top: 4px;
+}
+
+.reply-chain {
+  color: #64748b;
+}
+
+.reply-item {
+  margin-top: 8px;
+}
+
+.replying-tip {
+  color: #94a3b8;
+  font-size: 12px;
+  margin-top: 6px;
 }
 
 .comment-input {

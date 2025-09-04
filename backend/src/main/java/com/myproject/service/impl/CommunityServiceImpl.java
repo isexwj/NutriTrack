@@ -29,6 +29,7 @@ public class CommunityServiceImpl implements CommunityService {
     private final MealImageMapper mealImageMapper;
     private final UserMapper userMapper;
     private final UserService userService;
+    private final NotificationMapper notificationMapper;
 
 
     @Override
@@ -80,6 +81,20 @@ public class CommunityServiceImpl implements CommunityService {
             like.setRecordId(recordId);
             like.setUserId(userId);
             recordLikeMapper.insert(like);
+
+            // 通知：被点赞
+            MealRecord record = mealRecordMapper.selectById(recordId);
+            if (record != null && !record.getUserId().equals(userId)) {
+                Notification n = new Notification();
+                n.setUserId(record.getUserId());
+                n.setSenderUserId(userId);
+                n.setNotificationType(com.myproject.enums.NotificationType.LIKE);
+                n.setTargetRecordId(recordId);
+                n.setContent("有人赞了你的记录");
+                n.setIsRead(0);
+                n.setCreatedAt(LocalDateTime.now());
+                notificationMapper.insert(n);
+            }
             return ResponseResult.success("点赞成功");
         } catch (Exception e) {
             return ResponseResult.fail("点赞失败: " + e.getMessage());
@@ -115,7 +130,46 @@ public class CommunityServiceImpl implements CommunityService {
             comment.setContent(content);
             comment.setParentCommentId(parentCommentId);
 
+            // 父评论校验，避免外键错误
+            if (parentCommentId != null) {
+                RecordComment parent = recordCommentMapper.selectById(parentCommentId);
+                if (parent == null || !recordId.equals(parent.getRecordId())) {
+                    return ResponseResult.fail("父评论不存在或已被删除");
+                }
+            }
+
             recordCommentMapper.insert(comment);
+
+            // 通知：记录作者
+            MealRecord record = mealRecordMapper.selectById(recordId);
+            if (record != null && !record.getUserId().equals(userId)) {
+                Notification n1 = new Notification();
+                n1.setUserId(record.getUserId());
+                n1.setSenderUserId(userId);
+                n1.setNotificationType(com.myproject.enums.NotificationType.COMMENT);
+                n1.setTargetRecordId(recordId);
+                n1.setContent("有人评论了你的记录");
+                n1.setIsRead(0);
+                n1.setCreatedAt(LocalDateTime.now());
+                notificationMapper.insert(n1);
+            }
+
+            // 通知：被回复的评论作者（若有且不同人）
+            if (parentCommentId != null) {
+                RecordComment parent = recordCommentMapper.selectById(parentCommentId);
+                if (parent != null && !parent.getUserId().equals(userId)) {
+                    Notification n2 = new Notification();
+                    n2.setUserId(parent.getUserId());
+                    n2.setSenderUserId(userId);
+                    n2.setNotificationType(com.myproject.enums.NotificationType.COMMENT);
+                    n2.setTargetRecordId(recordId);
+                    n2.setContent("有人回复了你的评论");
+                    n2.setIsRead(0);
+                    n2.setCreatedAt(LocalDateTime.now());
+                    notificationMapper.insert(n2);
+                }
+            }
+
             return ResponseResult.success(convertCommentToVO(comment));
         } catch (Exception e) {
             return ResponseResult.fail("发表评论失败: " + e.getMessage());
@@ -147,11 +201,8 @@ public class CommunityServiceImpl implements CommunityService {
     @Override
     public ResponseResult<List<CommentVO>> getRecordComments(Long recordId) {
         try {
-            List<RecordComment> comments = recordCommentMapper.selectByRecordId(recordId);
-            List<CommentVO> commentVOs = comments.stream()
-                    .map(this::convertCommentToVO)
-                    .collect(Collectors.toList());
-            return ResponseResult.success(commentVOs);
+            // 返回已构建好的父子嵌套结构
+            return ResponseResult.success(getRecordCommentsVO(recordId));
         } catch (Exception e) {
             return ResponseResult.fail("获取评论失败: " + e.getMessage());
         }
@@ -264,9 +315,27 @@ public class CommunityServiceImpl implements CommunityService {
 
     private List<CommentVO> getRecordCommentsVO(Long recordId) {
         List<RecordComment> comments = recordCommentMapper.selectByRecordId(recordId);
-        return comments.stream()
-                .map(this::convertCommentToVO)
-                .collect(Collectors.toList());
+        // 构建父子映射
+        java.util.Map<Long, CommentVO> idToVo = new java.util.HashMap<>();
+        java.util.List<CommentVO> roots = new java.util.ArrayList<>();
+        for (RecordComment c : comments) {
+            CommentVO vo = convertCommentToVO(c);
+            vo.setReplies(new java.util.ArrayList<>());
+            idToVo.put(c.getId(), vo);
+        }
+        for (RecordComment c : comments) {
+            if (c.getParentCommentId() == null) {
+                roots.add(idToVo.get(c.getId()));
+            } else {
+                CommentVO parent = idToVo.get(c.getParentCommentId());
+                if (parent != null) {
+                    parent.getReplies().add(idToVo.get(c.getId()));
+                } else {
+                    roots.add(idToVo.get(c.getId()));
+                }
+            }
+        }
+        return roots;
     }
 
     private CommentVO convertCommentToVO(RecordComment comment) {
@@ -276,6 +345,8 @@ public class CommunityServiceImpl implements CommunityService {
                 .user(convertUserToVO(user))
                 .content(comment.getContent())
                 .createdAt(comment.getCreatedAt())
+                .parentCommentId(comment.getParentCommentId())
+                .replies(null)
                 .build();
     }
 
