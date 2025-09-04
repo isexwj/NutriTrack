@@ -38,4 +38,8 @@ public interface UserService {
      * 重置密码（内部使用）
      */
     boolean resetPassword(String username, String newPassword);
+
+    ResponseResult<String> updateUserInfo(String username, UserInfoVO userInfoVO);
+
+    ResponseResult<String> deactivateAccount(String username);
 }

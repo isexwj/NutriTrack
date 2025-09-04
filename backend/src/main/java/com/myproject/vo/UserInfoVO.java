@@ -15,7 +15,9 @@ public class UserInfoVO {
     
     private Long id;
     private String username;
+    private String nickname;
     private String email;
+    private String phoneNumber;
     private String role;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;

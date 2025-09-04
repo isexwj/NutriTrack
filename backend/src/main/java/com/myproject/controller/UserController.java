@@ -8,6 +8,8 @@ import com.myproject.vo.UserInfoVO;
 import com.myproject.service.UserService;
 import com.myproject.result.ResponseResult;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -40,4 +42,29 @@ public class UserController {
     public ResponseResult<UserInfoVO> getUserInfo(@PathVariable String username) {
         return userService.getUserInfo(username);
     }
+
+    // controller/UserController.java
+
+    @PutMapping("/{username}")
+    public ResponseResult<String> updateUserInfo(@PathVariable String username, @RequestBody UserInfoVO userInfoVO) {
+        // 验证用户权限（只能修改自己的信息）
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (!username.equals(authentication.getName())) {
+            return ResponseResult.fail("无权限修改他人信息");
+        }
+
+        return userService.updateUserInfo(username, userInfoVO);
+    }
+
+    @DeleteMapping("/{username}")
+    public ResponseResult<String> deactivateAccount(@PathVariable String username) {
+        // 验证用户权限（只能注销自己的账户）
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (!username.equals(authentication.getName())) {
+            return ResponseResult.fail("无权限注销他人账户");
+        }
+
+        return userService.deactivateAccount(username);
+    }
+
 }
