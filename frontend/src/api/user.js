@@ -6,7 +6,7 @@ export function login(data) {
 }
 
 export function getCaptcha(scene = 'login') {
-  return request.get('/user/captcha', { params: { scene } })
+  return request.get('/user/captcha', { params: { scene, _t: Date.now() } })
 }
 
 export function register(data) {

@@ -40,7 +40,7 @@
               placeholder="请输入验证码"
               size="default"
             />
-            <img :src="captcha.imageBase64" @click="refreshCaptcha" style="height:40px; cursor:pointer; border-radius:6px;" title="点击刷新"/>
+            <img :src="captcha.imageBase64" :key="form.captchaId" @click="refreshCaptcha" style="height:40px; cursor:pointer; border-radius:6px;" title="点击刷新" alt="captcha"/>
           </div>
         </el-form-item>
 
@@ -88,6 +88,8 @@ const form = reactive({
   captchaCode: ''
 })
 const captcha = reactive({ imageBase64: '' })
+const captchaLoading = ref(false)
+let lastCaptchaAt = 0
 
 const rules = {
   identifier: [
@@ -103,10 +105,30 @@ const rules = {
 }
 
 const refreshCaptcha = async () => {
-  const res = await getCaptcha('login')
-  if (res?.data) {
-    form.captchaId = res.data.captchaId
-    captcha.imageBase64 = res.data.imageBase64
+  const now = Date.now()
+  if (captchaLoading.value || (now - lastCaptchaAt) < 800) return
+  captchaLoading.value = true
+  try {
+    const res = await getCaptcha('login')
+    console.debug('captcha resp:', res)
+    if (res && res.code === 200 && res.data && res.data.imageBase64) {
+      form.captchaId = res.data.captchaId
+      const raw = String(res.data.imageBase64 || '').trim()
+        .replace(/\s+/g, '')
+        .replace(/^"|"$/g, '')
+      const marker = 'base64,'
+      const idx = raw.lastIndexOf(marker)
+      const body = idx >= 0 ? raw.slice(idx + marker.length) : raw
+      captcha.imageBase64 = body ? `data:image/png;base64,${body}` : ''
+      console.debug('captcha img src len:', captcha.imageBase64.length)
+    } else {
+      console.warn('captcha invalid payload:', res)
+    }
+  } catch (e) {
+    console.error('captcha request failed:', e)
+  } finally {
+    lastCaptchaAt = Date.now()
+    captchaLoading.value = false
   }
 }
 

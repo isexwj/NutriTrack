@@ -104,6 +104,12 @@
 			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
 			<version>2.1.0</version> <!-- 检查最新版本并替换 -->
 		</dependency>
+		<!-- Captcha -->
+		<dependency>
+			<groupId>com.github.whvcse</groupId>
+			<artifactId>easy-captcha</artifactId>
+			<version>1.6.2</version>
+		</dependency>
 		<!-- Redis -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>

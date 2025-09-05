@@ -46,6 +46,14 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                     .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                    // 前端静态资源放在 classpath:/static/**
+                    .requestMatchers(
+                            "/",
+                            "/index.html",
+                            "/favicon.ico",
+                            "/assets/**",
+                            "/images/**"
+                    ).permitAll()
                     .requestMatchers(
                             "/user/login",
                             "/user/captcha",
@@ -60,6 +68,7 @@ public class SecurityConfig {
                     .requestMatchers("/swagger-ui.html", "/v3/api-docs/**", "/swagger-ui/**").permitAll()
                     .requestMatchers("/images/**").permitAll()
                     .requestMatchers("/api/ai/**").permitAll()
+                    .requestMatchers("/ai/**").permitAll()
                     .anyRequest().authenticated()
             )
             // 添加JWT过滤器到过滤器链中

@@ -3,6 +3,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
@@ -31,18 +32,28 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        // 统一解析静态资源目录为绝对路径，避免分隔符和相对路径差异
+        // 1) 映射图片上传目录到 /images/**
         java.nio.file.Path absoluteDir = java.nio.file.Paths.get(System.getProperty("user.dir")).resolve(fileSavePath).normalize();
-
-        // 使用 file URI，Spring 对 file:URI 解析更稳定
         String fileLocation = absoluteDir.toUri().toString();
-
-        // 映射本地文件夹
-        // 访问 URL: http://localhost:8080/images/** 将指向到上述目录
         registry.addResourceHandler("/images/**")
-                // 优先本地文件系统目录（用于用户上传/编辑后的文件）
-                .addResourceLocations(fileLocation,
-                        // 兼容打包后的类路径静态资源（项目内置图片）
-                        "classpath:/static/images/");
+                .addResourceLocations(fileLocation, "classpath:/static/images/");
+
+        // 2) 映射前端静态资源（Vite 打包）
+        registry.addResourceHandler("/assets/**")
+                .addResourceLocations("classpath:/static/assets/");
+        registry.addResourceHandler("/favicon.ico")
+                .addResourceLocations("classpath:/static/favicon.ico");
+        registry.addResourceHandler("/index.html")
+                .addResourceLocations("classpath:/static/index.html");
+    }
+
+    // 将根路径 / 映射到 index.html（history 模式）
+    @Override
+    public void addViewControllers(ViewControllerRegistry registry) {
+        registry.addViewController("/").setViewName("forward:/index.html");
+        // SPA 前端路由：确保 /login /register /forgot 等路径转发到前端
+        registry.addViewController("/login").setViewName("forward:/index.html");
+        registry.addViewController("/register").setViewName("forward:/index.html");
+        registry.addViewController("/forgot").setViewName("forward:/index.html");
     }
 }
