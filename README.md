@@ -1,7 +1,3 @@
-
-<div align="center">
-  <img src="docs/AI分析.png
-
 # NutriTrack - 营养追踪与健康管理平台
 
 一个基于 **Vue3 + Element Plus + Pinia + Axios**（前端）和 **Spring Boot + Spring Security + JWT + MyBatis-Plus**（后端）实现的营养追踪与健康管理平台。
@@ -151,15 +147,14 @@ NutriTrack
    - 运行项目中的数据库脚本：`datasource/NutriTrack.sql`
 
 2. **准备图片存储目录**
-   - 在D盘创建目录（必须一致）：`D:\NutriTrack\images\`
-   - 将项目中的示例图片复制到该目录（手动复制或者执行下方指令）：
+   - 在D盘创建目录：`D:\NutriTrack\images\`
+   - 将项目中的示例图片复制到该目录（可手动复制或者执行下方指令）：
      ```bash
      # 复制 datasource/images/ 下的所有文件到 D:/NutriTrack/images/
      xcopy datasource\images\* D:\NutriTrack\images\ /E /Y
      ```
 
-4. **启动应用**
-   
+3. **启动应用**
    - 进入jar包所在目录
    - 运行命令：
      ```bash
@@ -169,9 +164,10 @@ NutriTrack
      ```bash
      java -jar nutritrack.jar --spring.datasource.username=root --spring.datasource.password=yourpassword
      ```
-   
-5. **访问应用**
+
+4. **访问应用**
    - 浏览器访问：http://localhost:8080
+   - 默认管理员账号：admin / admin123（如有）
 
 ### 注意事项
 - 确保 `D:\NutriTrack\images\` 目录存在且有写入权限
@@ -316,9 +312,5 @@ NutriTrack
 
 <div align="center">
   <img src="docs/AI分析.png" alt="AI分析" width="80%">
-  <p style="margin:5px 0;">图10 AI分析</p>
-</div>
-
-" alt="AI分析" width="80%">
   <p style="margin:5px 0;">图10 AI分析</p>
 </div>
