@@ -8,7 +8,7 @@
       </div>
       <div class="header-actions">
         <el-button type="primary" @click="generateAnalysis" :loading="isAnalyzing">
-          <el-icon><Star /></el-icon>
+          <el-icon><MagicStick /></el-icon>
           生成分析报告
         </el-button>
       </div>
@@ -19,7 +19,7 @@
       <div class="overview-card">
         <div class="card-header">
           <div class="card-icon">
-            <el-icon size="24"><Star /></el-icon>
+            <el-icon size="24"><Document /></el-icon>
           </div>
           <div class="card-title">今日饮食概览</div>
         </div>
@@ -52,7 +52,7 @@
       <div class="analysis-report">
         <div class="report-header">
           <div class="report-title">
-            <el-icon><Star /></el-icon>
+            <el-icon><Document /></el-icon>
             AI分析报告
           </div>
           <div class="report-time">
@@ -69,7 +69,7 @@
             <!-- 营养分析 -->
             <div class="report-section">
               <div class="section-title">
-                <el-icon><Star /></el-icon>
+                <el-icon><Document /></el-icon>
                 营养分析
               </div>
               <div class="section-content">
@@ -105,7 +105,7 @@
             <!-- 健康建议 -->
             <div class="report-section">
               <div class="section-title">
-                <el-icon><Star /></el-icon>
+                <el-icon><CircleCheck /></el-icon>
                 健康建议
               </div>
               <div class="section-content">
@@ -116,7 +116,7 @@
                     class="suggestion-item"
                   >
                     <div class="suggestion-icon">
-                      <el-icon><Star /></el-icon>
+                      <el-icon><CircleCheck /></el-icon>
                     </div>
                     <div class="suggestion-text">{{ suggestion }}</div>
                   </div>
@@ -127,7 +127,7 @@
             <!-- 改进建议 -->
             <div class="report-section">
               <div class="section-title">
-                <el-icon><Star /></el-icon>
+                <el-icon><EditPen /></el-icon>
                 改进建议
               </div>
               <div class="section-content">
@@ -138,7 +138,7 @@
                     class="improvement-item"
                   >
                     <div class="improvement-icon">
-                      <el-icon><Star /></el-icon>
+                      <el-icon><EditPen /></el-icon>
                     </div>
                     <div class="improvement-text">{{ improvement }}</div>
                   </div>
@@ -153,7 +153,7 @@
       <div class="trend-analysis">
         <div class="trend-header">
           <div class="trend-title">
-            <el-icon><Star /></el-icon>
+            <el-icon><DataLine /></el-icon>
             健康趋势分析
           </div>
           <div class="trend-controls">
@@ -185,7 +185,7 @@
     <div class="ai-chat">
       <div class="chat-header">
         <div class="chat-title">
-          <el-icon><Star /></el-icon>
+          <el-icon><ChatDotRound /></el-icon>
           AI营养师助手
         </div>
         <div class="chat-status">
@@ -202,7 +202,7 @@
           >
             <div class="message-avatar">
               <el-avatar :size="32" v-if="message.type === 'ai'">
-                <el-icon><Star /></el-icon>
+                <el-icon><ChatDotRound /></el-icon>
               </el-avatar>
               <el-avatar :size="32" v-else>
                 {{ userStore.username.charAt(0).toUpperCase() }}
@@ -242,6 +242,7 @@ import {
 
 import * as echarts from 'echarts'
 import {getTodayStats} from "@/api/meal.js";
+import { MagicStick, Document, CircleCheck, EditPen, DataLine, ChatDotRound } from '@element-plus/icons-vue'
 
 
 const caloriesChart = ref(null)

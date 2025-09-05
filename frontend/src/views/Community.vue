@@ -92,11 +92,11 @@
           <!-- 统计信息 -->
           <div class="post-stats">
             <div class="stat-item">
-              <el-icon><Star /></el-icon>
+              <el-icon><PieChart /></el-icon>
               <span>{{ post.calories }} 卡路里</span>
             </div>
             <div class="stat-item">
-              <el-icon><Star /></el-icon>
+              <el-icon><Medal /></el-icon>
               <span>{{ post.rating }} 分</span>
             </div>
           </div>
@@ -109,7 +109,7 @@
                 :class="{ liked: post.isLiked }"
                 @click="toggleLike(post)"
               >
-                <el-icon><Star /></el-icon>
+                <el-icon><StarFilled /></el-icon>
                 {{ post.likes }}
               </el-button>
               <el-button type="text" @click="toggleComments(post)">
@@ -234,7 +234,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Star, ChatDotRound, Share, Link } from '@element-plus/icons-vue'
+import { StarFilled, ChatDotRound, Share, Link, PieChart, Medal } from '@element-plus/icons-vue'
 import * as communityApi from '@/api/community'
 
 // 响应式数据
