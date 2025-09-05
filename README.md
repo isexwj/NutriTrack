@@ -257,8 +257,63 @@ NutriTrack
    jwt:
      secret: your_jwt_secret_key
      expiration: 86400000
-   ``` 
+   ```
 
 ## 🤝 声明
 
 项目为2025年南开大学软件学院暑期实训项目，详细开发过程记录可见[NKU内部飞书文档](https://nankai.feishu.cn/wiki/RGetwpj7iisN5RkxtGQc6KgTnBc)🤗🤗
+
+------
+
+## 🧩项目截图
+
+<div align="center">
+  <img src="docs/登录.png" alt="登录" width="50%">
+  <p style="margin:5px 0;">图1 登录</p>
+</div>
+
+<div align="center">
+  <img src="docs/注册.png" alt="注册" width="50%">
+  <p style="margin:5px 0;">图2 注册</p>
+</div>
+
+
+<div align="center">
+  <img src="docs/邮箱注册.png" alt="邮箱注册" width="80%">
+  <p style="margin:5px 0;">图3 邮箱注册</p>
+</div>
+<div align="center">
+  <img src="docs/重置密码.png" alt="重置密码" width="50%">
+  <p style="margin:5px 0;">图4 重置密码</p>
+</div>
+
+
+<div align="center">
+  <img src="docs/邮箱重置密码.png" alt="邮箱重置密码" width="80%">
+  <p style="margin:5px 0;">图5 邮箱重置密码</p>
+</div>
+
+<div align="center">
+  <img src="docs/仪表盘.png" alt="仪表盘" width="80%">
+  <p style="margin:5px 0;">图6 仪表盘</p>
+</div>
+<div align="center">
+  <img src="docs/我的饮食记录.png" alt="我的饮食记录" width="80%">
+  <p style="margin:5px 0;">图7 我的饮食记录</p>
+</div>
+
+<div align="center">
+  <img src="docs/添加.png" alt="添加" width="60%">
+  <p style="margin:5px 0;">图8 添加饮食记录</p>
+</div>
+
+
+<div align="center">
+  <img src="docs/社区.png" alt="社区" width="80%">
+  <p style="margin:5px 0;">图9 社区</p>
+</div>
+
+<div align="center">
+  <img src="docs/AI分析.png" alt="AI分析" width="80%">
+  <p style="margin:5px 0;">图10 AI分析</p>
+</div>
