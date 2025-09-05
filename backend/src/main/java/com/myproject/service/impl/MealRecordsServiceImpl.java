@@ -56,14 +56,43 @@ public class MealRecordsServiceImpl extends ServiceImpl<MealRecordsMapper, MealR
         result.put("dinner", false);
 
         for (Map<String, Object> row : list) {
-            String mealType = (String) row.get("meal_type");
+            Object raw = row.get("meal_type");
+            if (raw == null) {
+                raw = row.get("mealType"); // 兼容 map-underscore-to-camel-case
+            }
+            String mealType = raw == null ? null : raw.toString();
             Long count = ((Number) row.get("cnt")).longValue();
-            if (count > 0) {
-                result.put(mealType, true);
+            if (count <= 0 || mealType == null) {
+                continue;
+            }
+            String key = normalizeMealType(mealType);
+            if (result.containsKey(key)) {
+                result.put(key, true);
             }
         }
 
         return result;
+    }
+
+    private String normalizeMealType(String mealType) {
+        String s = mealType.trim().toLowerCase();
+        // 统一一些可能的存储值
+        switch (s) {
+            case "breakfast":
+            case "早餐":
+            case "morning":
+                return "breakfast";
+            case "lunch":
+            case "午餐":
+            case "noon":
+                return "lunch";
+            case "dinner":
+            case "晚餐":
+            case "supper":
+                return "dinner";
+            default:
+                return s;
+        }
     }
 
     @Override
