@@ -8,7 +8,7 @@
       </div>
       <!-- <div class="header-actions">
         <el-button type="primary" @click="quickAddMeal">
-          <el-icon><Star /></el-icon>
+          <el-icon><Plus /></el-icon>
           快速记录
         </el-button>
       </div> -->
@@ -17,7 +17,7 @@
     <!-- 今日打卡状态 -->
     <div class="meal-checkin">
       <div class="checkin-title">
-        <el-icon><Star /></el-icon>
+        <el-icon><Calendar /></el-icon>
         今日用餐打卡
       </div>
       <div class="checkin-cards">
@@ -55,7 +55,7 @@
       <div class="stats-grid">
         <div class="stat-card">
           <div class="stat-icon calories">
-            <el-icon size="20"><Star /></el-icon>
+            <el-icon size="20"><PieChart /></el-icon>
           </div>
           <div class="stat-content">
             <div class="stat-value">{{ todayStats.calories }}</div>
@@ -66,7 +66,7 @@
         
         <div class="stat-card">
           <div class="stat-icon meals">
-            <el-icon size="20"><Star /></el-icon>
+            <el-icon size="20"><ForkSpoon /></el-icon>
           </div>
           <div class="stat-content">
             <div class="stat-value">{{ todayStats.meals }}</div>
@@ -77,7 +77,7 @@
         
         <div class="stat-card">
           <div class="stat-icon rating">
-            <el-icon size="20"><Star /></el-icon>
+            <el-icon size="20"><StarFilled /></el-icon>
           </div>
           <div class="stat-content">
             <div class="stat-value">{{ todayStats.rating }}</div>
@@ -88,7 +88,7 @@
         
         <div class="stat-card">
           <div class="stat-icon health">
-            <el-icon size="20"><Star /></el-icon>
+            <el-icon size="20"><Medal /></el-icon>
           </div>
           <div class="stat-content">
             <div class="stat-value">{{ todayStats.healthScore }}</div>
@@ -103,7 +103,9 @@
     <div class="stats-grid">
       <div class="stat-card">
         <div class="stat-icon calories">
-          <el-icon size="20"><Star /></el-icon>
+          <div class="icon-chip">
+            <el-icon class="glyph" size="18"><PieChart /></el-icon>
+          </div>
         </div>
         <div class="stat-content">
           <div class="stat-value">{{ todayStats.calories }}</div>
@@ -116,7 +118,9 @@
       
       <div class="stat-card">
         <div class="stat-icon meals">
-          <el-icon size="20"><Star /></el-icon>
+          <div class="icon-chip">
+            <el-icon class="glyph" size="18"><ForkSpoon /></el-icon>
+          </div>
         </div>
         <div class="stat-content">
           <div class="stat-value">{{ todayStats.meals }}</div>
@@ -129,7 +133,9 @@
       
       <div class="stat-card">
         <div class="stat-icon rating">
-          <el-icon size="20"><Star /></el-icon>
+          <div class="icon-chip">
+            <el-icon class="glyph" size="18"><StarFilled /></el-icon>
+          </div>
         </div>
         <div class="stat-content">
           <div class="stat-value">{{ todayStats.rating }}</div>
@@ -142,7 +148,9 @@
       
       <div class="stat-card">
         <div class="stat-icon health">
-          <el-icon size="20"><Star /></el-icon>
+          <div class="icon-chip">
+            <el-icon class="glyph" size="18"><Medal /></el-icon>
+          </div>
         </div>
         <div class="stat-content">
           <div class="stat-value">{{ todayStats.healthScore }}</div>
@@ -219,7 +227,7 @@
                 </div>
               </div>
               <div class="user-badge">
-                <el-icon v-if="index < 3"><Star /></el-icon>
+                <el-icon v-if="index < 3"><Trophy /></el-icon>
               </div>
             </div>
           </div>
@@ -242,7 +250,7 @@
                 class="suggestion-item"
               >
                 <div class="suggestion-icon">
-                  <el-icon><Star /></el-icon>
+                  <el-icon><CircleCheck /></el-icon>
                 </div>
                 <div class="suggestion-text">{{ suggestion }}</div>
               </div>
@@ -265,7 +273,14 @@ import { defineEmits } from 'vue'
 import { 
   Plus, 
   Calendar, 
-  Star
+  Star, 
+  PieChart, 
+  ForkSpoon, 
+  StarFilled, 
+  Medal, 
+  Trophy, 
+  CircleCheck, 
+  Coffee
 } from '@element-plus/icons-vue'
 
 const userStore = useUserStore()
@@ -292,7 +307,7 @@ const mealTypes = ref([
     type: 'breakfast',
     name: '早餐',
     time: '07:00-09:00',
-    icon: Star,
+    icon: Coffee,
     checked: true,
     missed: false,
     upcoming: false
@@ -301,7 +316,7 @@ const mealTypes = ref([
     type: 'lunch',
     name: '午餐',
     time: '11:30-13:30',
-    icon: Star,
+    icon: ForkSpoon,
     checked: true,
     missed: false,
     upcoming: false
@@ -310,7 +325,7 @@ const mealTypes = ref([
     type: 'dinner',
     name: '晚餐',
     time: '17:30-19:30',
-    icon: Star,
+    icon: ForkSpoon,
     checked: false,
     missed: false,
     upcoming: true
@@ -801,14 +816,37 @@ const fetchCommunityRanking = async () => {
 }
 
 .stat-icon {
-  width: 48px;
-  height: 48px;
+  width: 42px;
+  height: 42px;
   border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
+  box-shadow: inset 0 -6px 12px rgba(0,0,0,0.08);
 }
+
+.stat-icon .glyph {
+  filter: drop-shadow(0 1px 0 rgba(255,255,255,0.35));
+}
+
+/* 中间白色圆片，和上方餐次样式统一 */
+.icon-chip {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+
+/* 具体卡片的外层背景保持品牌色渐变 */
+.stat-icon.calories { background: #fef3c7; color: #d97706; }
+.stat-icon.meals { background: #ecfdf5; color: #059669; }
+.stat-icon.rating { background: #f5f3ff; color: #8b5cf6; }
+.stat-icon.health { background: #eff6ff; color: #2563eb; }
 
 .stat-icon.calories {
   background: linear-gradient(135deg, #f59e0b, #f97316);
