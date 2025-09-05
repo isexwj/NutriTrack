@@ -147,7 +147,7 @@ NutriTrack
    - 运行项目中的数据库脚本：`datasource/NutriTrack.sql`
 
 2. **准备图片存储目录**
-   - 在D盘创建目录：`D:\NutriTrack\images\`
+   - 在D盘创建目录（必须是这个目录，不可更改）：`D:\NutriTrack\images\`
    - 将项目中的示例图片复制到该目录（可手动复制或者执行下方指令）：
      ```bash
      # 复制 datasource/images/ 下的所有文件到 D:/NutriTrack/images/
