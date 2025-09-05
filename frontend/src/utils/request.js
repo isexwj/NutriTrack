@@ -2,7 +2,7 @@ import axios from 'axios'
 import { useUserStore } from '@/store/user'
 
 const service = axios.create({
-  baseURL: 'http://localhost:8080', // 你的后端地址
+  baseURL: '/',
   timeout: 5000
 })
 

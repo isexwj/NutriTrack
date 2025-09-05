@@ -26,6 +26,6 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseResult<?> handleException(Exception ex) {
         ex.printStackTrace(); // 方便调试，生产环境可关闭
-        return ResponseResult.fail(ResponseCode.FAIL.getCode(), "服务器内部错误: " + ex.getMessage());
+        return ResponseResult.fail(ResponseCode.FAIL.getCode(), "服务器内部错误" + ex.getMessage());
     }
 }

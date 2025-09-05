@@ -416,29 +416,19 @@ public class UserServiceImpl implements UserService {
     public ResponseResult<CaptchaVO> generateCaptcha(String scene) {
         try {
             String captchaId = UUID.randomUUID().toString();
-            String code = String.valueOf((int)(Math.random() * 9000) + 1000);
-            // 简单图片生成（可替换为Kaptcha）
-            int width = 100, height = 40;
-            BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
-            Graphics2D g = image.createGraphics();
-            g.setColor(Color.WHITE);
-            g.fillRect(0, 0, width, height);
-            g.setColor(Color.BLACK);
-            g.setFont(new Font("Arial", Font.BOLD, 24));
-            g.drawString(code, 18, 28);
-            g.dispose();
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            ImageIO.write(image, "png", baos);
-            String base64 = Base64.getEncoder().encodeToString(baos.toByteArray());
-            if (stringRedisTemplate != null) {
-                try {
-                    String key = "captcha:" + (scene == null ? "login" : scene) + ":" + captchaId;
-                    stringRedisTemplate.opsForValue().set(key, code, 3, TimeUnit.MINUTES);
-                } catch (Exception ignore) { }
-            }
-            return ResponseResult.success(new CaptchaVO(captchaId, "data:image/png;base64," + base64));
+            // 4 位数字验证码 PNG
+            com.wf.captcha.SpecCaptcha captcha = new com.wf.captcha.SpecCaptcha(120, 40, 4);
+            captcha.setCharType(com.wf.captcha.base.Captcha.TYPE_ONLY_NUMBER);
+            String code = captcha.text();
+            String base64 = "data:image/png;base64," + captcha.toBase64();
+
+            // 严格使用 Redis 进行存储与校验
+            String key = "captcha:" + (scene == null ? "login" : scene) + ":" + captchaId;
+            stringRedisTemplate.opsForValue().set(key, code, 3, TimeUnit.MINUTES);
+
+            return ResponseResult.success(new CaptchaVO(captchaId, base64));
         } catch (Exception e) {
-            return ResponseResult.fail("生成验证码失败");
+            return ResponseResult.fail("生成验证码失败，请稍后重试");
         }
     }
 
