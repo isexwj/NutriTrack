@@ -183,7 +183,15 @@ NutriTrack
 - Node.js 16+ 或更高版本
 - MySQL 5.7+ 或更高版本
 - Maven 3.6+ 或更高版本
-- Nginx（用于前端静态资源部署和反向代理）
+
+### 快速启动应用
+- 运行数据库文件
+- 进入到jar包所在文件夹
+  ```
+  java -jar nutritrack.jar --spring.datasource.username=root --spring.datasource.password=yourpassword --spring.data.redis.port=yourport
+  ```
+  如果配置和现在yml文件一致可不用修改
+- 浏览器直接访问http://localhost:8080 即可进入应用 
 
 ### 后端部署步骤
 
