@@ -167,7 +167,6 @@ NutriTrack
 
 4. **访问应用**
    - 浏览器访问：http://localhost:8080
-   - 默认管理员账号：admin / admin123（如有）
 
 ### 注意事项
 - 确保 `D:\NutriTrack\images\` 目录存在且有写入权限
