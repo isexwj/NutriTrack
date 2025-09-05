@@ -1,3 +1,7 @@
+
+<div align="center">
+  <img src="docs/AI分析.png
+
 # NutriTrack - 营养追踪与健康管理平台
 
 一个基于 **Vue3 + Element Plus + Pinia + Axios**（前端）和 **Spring Boot + Spring Security + JWT + MyBatis-Plus**（后端）实现的营养追踪与健康管理平台。
@@ -94,7 +98,7 @@ NutriTrack
 │ │ └── vo # 视图对象 
 │ └── resources 
 │ └── application.yml # 配置文件 
-│ ├── frontend # Vue3 前端 
+├── frontend # Vue3 前端 
 │ ├── src 
 │ │ ├── api # axios 封装 & 接口请求 
 │ │ ├── store # pinia store 
@@ -109,6 +113,9 @@ NutriTrack
 │ │ ├── router # vue-router 配置 
 │ │ └── utils # 工具类 
 │ └── vite.config.js # Vite 配置 
+├── datasource # 数据库和资源文件
+│ ├── NutriTrack.sql # 数据库初始化脚本
+│ └── images # 示例图片资源（需要复制到 D:/NutriTrack/images/）
 └── README.md
 ```
 ----
@@ -134,18 +141,43 @@ NutriTrack
 在部署NutriTrack应用之前，需要确保服务器满足以下环境要求：
 
 - Java 21 或更高版本
-- Node.js 16+ 或更高版本
 - MySQL 5.7+ 或更高版本
-- Maven 3.6+ 或更高版本
+- Redis 6.0+ 或更高版本（必须，用于验证码存储）
 
-### 快速启动应用
-- 运行数据库文件
-- 进入到jar包所在文件夹
-  ```
-  java -jar nutritrack.jar --spring.datasource.username=root --spring.datasource.password=yourpassword --spring.data.redis.port=yourport
-  ```
-  如果配置和现在yml文件一致可不用修改
-- 浏览器直接访问http://localhost:8080 即可进入应用
+### 部署步骤
+
+1. **准备数据库**
+   - 在MySQL中创建数据库：`CREATE DATABASE nutritrack DEFAULT CHARACTER SET utf8mb4;`
+   - 运行项目中的数据库脚本：`datasource/NutriTrack.sql`
+
+2. **准备图片存储目录**
+   - 在D盘创建目录（必须一致）：`D:\NutriTrack\images\`
+   - 将项目中的示例图片复制到该目录（手动复制或者执行下方指令）：
+     ```bash
+     # 复制 datasource/images/ 下的所有文件到 D:/NutriTrack/images/
+     xcopy datasource\images\* D:\NutriTrack\images\ /E /Y
+     ```
+
+4. **启动应用**
+   
+   - 进入jar包所在目录
+   - 运行命令：
+     ```bash
+     java -jar nutritrack.jar
+     ```
+   - 如果数据库配置与默认不同，可通过参数覆盖：
+     ```bash
+     java -jar nutritrack.jar --spring.datasource.username=root --spring.datasource.password=yourpassword
+     ```
+   
+5. **访问应用**
+   - 浏览器访问：http://localhost:8080
+
+### 注意事项
+- 确保 `D:\NutriTrack\images\` 目录存在且有写入权限
+- 如果D盘不存在，可修改 `application.yml` 中的 `file.save-path` 为其他路径
+- 首次运行会自动创建必要的数据库表
+- 图片存储路径已配置为绝对路径，确保跨平台兼容性
 
 ---
 
@@ -156,35 +188,68 @@ NutriTrack
 - Node.js 16+
 - MySQL 5.7+
 - Maven 3.6+
+- Redis 6.0+（可选，用于验证码存储）
 
 ### 后端运行
 
-1. 修改 `backend/src/main/resources/application.yml` 数据库配置：
-   ```yml
-   spring:
-     datasource:
-       url: jdbc:mysql://localhost:3306/nutritrack?useSSL=false&serverTimezone=UTC
-       username: root
-       password: your_password
-   ```
-2. 在MySQL客户端运行项目中给的[sql文件](NutriTrack.sql)
-3. 启动后端服务：
+1. **准备数据库**
+   - 在MySQL中创建数据库：`CREATE DATABASE nutritrack DEFAULT CHARACTER SET utf8mb4;`
+   - 运行数据库脚本：`datasource/NutriTrack.sql`
+
+2. **准备图片存储目录**
+   - 在D盘创建目录：`D:\NutriTrack\images\`
+   - 将示例图片复制到该目录：
+     ```bash
+     # Windows
+     xcopy datasource\images\* D:\NutriTrack\images\ /E /Y
+     
+     # Linux/Mac
+     cp -r datasource/images/* /d/NutriTrack/images/
+     ```
+
+3. **配置数据库连接**
+   - 修改 `backend/src/main/resources/application.yml` 数据库配置：
+     ```yml
+     spring:
+       datasource:
+         url: jdbc:mysql://localhost:3306/nutritrack?useSSL=true&serverTimezone=UTC&characterEncoding=utf8
+         username: root
+         password: your_password
+       data:
+         redis:
+           host: 127.0.0.1
+           port: 6379
+           password: your_redis_password  # 如有密码请设置
+     ```
+
+4. **启动后端服务**
    ```bash 
    cd backend 
    mvn spring-boot:run
-   ````
+   ```
 
 ### 前端运行
-1. 安装依赖
+
+1. **安装依赖**
    ```bash
    cd frontend
    npm install
    ```
-2. 运行前端
+
+2. **运行前端**
    ```bash
    npm run dev
    ```
-3. 访问应用：http://localhost:5173
+
+3. **访问应用**
+   - 前端开发服务器：http://localhost:5173
+   - 后端API文档：http://localhost:8080/swagger-ui.html
+
+### 开发模式说明
+- 前端开发服务器会自动代理API请求到后端（8080端口）
+- 图片上传会保存到 `D:\NutriTrack\images\` 目录
+- 前端通过 `/images/文件名` 访问上传的图片
+- 开发环境与生产环境使用相同的图片存储路径，确保一致性
 
 ---
 
@@ -251,5 +316,9 @@ NutriTrack
 
 <div align="center">
   <img src="docs/AI分析.png" alt="AI分析" width="80%">
+  <p style="margin:5px 0;">图10 AI分析</p>
+</div>
+
+" alt="AI分析" width="80%">
   <p style="margin:5px 0;">图10 AI分析</p>
 </div>
