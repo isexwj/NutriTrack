@@ -86,9 +86,13 @@ public class AIAnalysisController {
 
 
         int days = 7;
-        if ("30d".equals(period)) days = 30;
-        else if ("3m".equals(period) || "90d".equals(period)) days = 90;
-        else days = 7;
+        if ("30d".equals(period)) {
+            days = 30;
+        } else if ("3m".equals(period) || "90d".equals(period)) {
+            days = 90;
+        } else {
+            days = 7;
+        }
 
         log.info("收到 /api/ai/trend 请求 userId={}, username={}, period={} ({} 天)", userId, username, period, days);
 

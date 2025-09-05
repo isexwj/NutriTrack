@@ -123,7 +123,7 @@ public class AiClient {
         List<Map<String, Object>> messages = new ArrayList<>();
         Map<String, Object> sys = new HashMap<>();
         sys.put("role", "system");
-        sys.put("content", "你是营养分析助手。根据传入的 JSON（含 meals 列表、images、description、calories 等）输出一个 JSON 对象，包含 healthScore、nutrition:{carbGrams,proteinGrams,fatGrams,summary}、suggestions[], improvements[] 等字段。优先只输出 JSON 或在回复中附带一个完整 JSON 对象。");
+        sys.put("content", "你是营养分析助手，请严格使用“简体中文”输出结果。\n\n任务：根据用户提供的 JSON（包含 meals 列表、images、description、calories 等），推断当天饮食的简要评估，并返回一个“仅包含 JSON 的回复”（不要输出任何解释性文字）。\n\n输出格式（字段名固定，英文）：{\n  healthScore: number, // 0-100，保留整数或一位小数\n  nutrition: { carbGrams: number, proteinGrams: number, fatGrams: number, summary: string },\n  suggestions: string[3], // 3 条，面向用户、简短可执行，中文\n  improvements: string[3] // 3 条，中文\n}\n\n要求：\n- 所有说明性文本（summary/suggestions/improvements）必须用简体中文，不要出现英文；\n- 即使信息不完整也要做合理估计，绝不报错；\n- 数值可四舍五入为整数；\n- 回复中不要包含除上述 JSON 以外的任何内容。");
         messages.add(sys);
 
         Map<String, Object> usr = new HashMap<>();
