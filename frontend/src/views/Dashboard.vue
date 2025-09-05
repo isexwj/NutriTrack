@@ -154,6 +154,7 @@
         </div>
         <div class="stat-content">
           <div class="stat-value">{{ todayStats.healthScore }}</div>
+          <div v-if="healthScorePending" class="stat-pending">健康指数更新中...</div>
           <div class="stat-label">健康指数</div>
           <div :class="getTrackingClass('healthScore')">
             {{ getTrackingText('healthScore') }}
@@ -240,7 +241,10 @@
             <el-button type="text" @click="viewAIAnalysis">详细分析</el-button>
           </div>
           <div class="suggestions-content">
-            <div v-if="aiSuggestions.length === 0" class="no-suggestions">
+            <div v-if="aiPending" class="no-suggestions">
+              <el-empty description="AI 正在生成中..." :image-size="60" />
+            </div>
+            <div v-else-if="aiSuggestions.length === 0" class="no-suggestions">
               <el-empty description="暂无建议" :image-size="60" />
             </div>
             <div v-else class="suggestions-list">
@@ -340,6 +344,8 @@ const communityRanking = ref([])
 
 // AI建议数据
 const aiSuggestions = ref([])  // 初始化为空
+const aiPending = ref(false)
+const healthScorePending = ref(false)
 
 // 方法
 const formatTime = (date) => {
@@ -465,7 +471,7 @@ onMounted(() => {
   fetchTodayStats();
   fetchRecentMeals();
   fetchCommunityRanking();
-  fetchAISuggestions();
+  fetchAISuggestions(true);
   fetchMealStatus();
   currentDate.value = new Date().toLocaleDateString('zh-CN', {
     year: 'numeric',
@@ -485,8 +491,10 @@ const fetchTodayStats = async () => {
     const yesterday = date.toISOString().split('T')[0]; // "2025-09-02"
     const res2 = await getTodayStats(yesterday)
     yesStats.value = res2.data // 需与后端返回格式一致
+    healthScorePending.value = false
   } catch (error) {
     console.error('获取今日统计失败', error)
+    healthScorePending.value = true
   }
 }
 const fetchMealStatus = async () => {
@@ -540,13 +548,31 @@ const fetchRecentMeals = async () => {
 //     console.error('获取 AI 建议失败', error)
 //   }
 // }
-const fetchAISuggestions = async () => {
-  try {
-    const res = await getAISuggestions()
-    aiSuggestions.value = res.data || ['nihoa'] // 确保是数组
-  } catch (error) {
-    console.error('获取 AI 建议失败', error)
-    aiSuggestions.value = [] // 避免 undefined
+const fetchAISuggestions = async (withPolling = true) => {
+  let tries = 0
+  const maxTries = withPolling ? 12 : 1 // 轮询约 60s
+  aiPending.value = false
+  while (tries < maxTries) {
+    try {
+      const res = await getAISuggestions()
+      const data = res && res.data ? res.data : []
+      if (Array.isArray(data) && data.length > 0) {
+        aiSuggestions.value = data
+        aiPending.value = false
+        return
+      } else {
+        aiSuggestions.value = []
+        aiPending.value = true
+        if (!withPolling) break
+        await new Promise(r => setTimeout(r, 5000))
+      }
+    } catch (error) {
+      console.error('获取 AI 建议失败', error)
+      aiPending.value = true
+      if (!withPolling) break
+      await new Promise(r => setTimeout(r, 5000))
+    }
+    tries++
   }
 }
 const fetchCommunityRanking = async () => {

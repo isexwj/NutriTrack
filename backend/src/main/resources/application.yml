@@ -26,12 +26,23 @@ spring:
   main:
     allow-circular-references: true
 
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 10MB      # 单个文件最大 10MB
+      max-request-size: 50MB   # 单次请求总大小 50MB
+
 # 邮件配置（TODO: 按你的邮箱服务商修改）
 mail:
   from: ${MAIL_FROM:wenjie_xuee2025@163.com}
 
 server:
   port: 8080
+  tomcat:
+    # 允许大文件吞吐（-1 表示不限制）
+    max-swallow-size: -1
+    # 允许更大的表单/Multipart提交（-1 表示不限制）
+    max-http-form-post-size: -1
 
 springdoc:
   api-docs:
@@ -56,9 +67,11 @@ mybatis-plus:
     map-underscore-to-camel-case: true
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
 
+# 文件上传大小限制（Spring Boot 3）
+
 file:
   # 图片文件夹的相对路径，相对于项目根目录
-  save-path: backend/src/main/resources/static/images/
+  save-path: D:/NutriTrack/images/
 
 deepseek:
   base-url: https://api.deepseek.com/v1

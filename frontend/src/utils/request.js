@@ -3,7 +3,7 @@ import { useUserStore } from '@/store/user'
 
 const service = axios.create({
   baseURL: '/',
-  timeout: 5000
+  timeout: 60000
 })
 
 // 请求拦截器

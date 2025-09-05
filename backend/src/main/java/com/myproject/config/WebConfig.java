@@ -33,7 +33,7 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         // 1) 映射图片上传目录到 /images/**
-        java.nio.file.Path absoluteDir = java.nio.file.Paths.get(System.getProperty("user.dir")).resolve(fileSavePath).normalize();
+        java.nio.file.Path absoluteDir = java.nio.file.Paths.get(fileSavePath).normalize();
         String fileLocation = absoluteDir.toUri().toString();
         registry.addResourceHandler("/images/**")
                 .addResourceLocations(fileLocation, "classpath:/static/images/");

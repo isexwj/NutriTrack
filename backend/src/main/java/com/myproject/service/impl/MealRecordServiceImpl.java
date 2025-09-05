@@ -386,7 +386,7 @@ public class MealRecordServiceImpl implements MealRecordService {
      */
     private String saveImage(MultipartFile image, Long recordId, int order) throws IOException {
         // 解析静态资源目录为绝对路径，确保与 WebConfig 的资源映射一致
-        Path imagesDir = Paths.get(System.getProperty("user.dir")).resolve(IMAGE_UPLOAD_DIR).normalize();
+        Path imagesDir = Paths.get(IMAGE_UPLOAD_DIR).normalize();
 
         // 确保目录存在
         Files.createDirectories(imagesDir);
@@ -416,7 +416,7 @@ public class MealRecordServiceImpl implements MealRecordService {
             if (imageUrl == null || imageUrl.isEmpty()) {
                 return;
             }
-            Path imagesDir = Paths.get(System.getProperty("user.dir")).resolve(IMAGE_UPLOAD_DIR).normalize();
+            Path imagesDir = Paths.get(IMAGE_UPLOAD_DIR).normalize();
             Path filePath = imagesDir.resolve(imageUrl).normalize();
             if (Files.exists(filePath)) {
                 Files.delete(filePath);
