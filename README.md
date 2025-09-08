@@ -286,7 +286,7 @@ NutriTrack
 
 
 <div align="center">
-  <img src="https://github.com/isexwj/NutriTrack/tree/master/docs/邮箱重置密码.png" alt="邮箱重置密码" width="80%">
+  <img src="docs/邮箱重置密码.png" alt="邮箱重置密码" width="80%">
   <p style="margin:5px 0;">图5 邮箱重置密码</p>
 </div>
 
