@@ -192,6 +192,7 @@ NutriTrack
    - 运行数据库脚本：`datasource/NutriTrack.sql`
 
 2. **准备图片存储目录**
+   
    - 在D盘创建目录：`D:\NutriTrack\images\`
    - 将示例图片复制到该目录：
      ```bash
@@ -201,7 +202,7 @@ NutriTrack
      # Linux/Mac
      cp -r datasource/images/* /d/NutriTrack/images/
      ```
-
+   
 3. **配置数据库连接**
    - 修改 `backend/src/main/resources/application.yml` 数据库配置：
      ```yml
@@ -285,7 +286,7 @@ NutriTrack
 
 
 <div align="center">
-  <img src="docs/邮箱重置密码.png" alt="邮箱重置密码" width="80%">
+  <img src="https://github.com/isexwj/NutriTrack/tree/master/docs/邮箱重置密码.png" alt="邮箱重置密码" width="80%">
   <p style="margin:5px 0;">图5 邮箱重置密码</p>
 </div>
 
