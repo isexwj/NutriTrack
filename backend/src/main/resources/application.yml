@@ -15,7 +15,7 @@ spring:
     host: smtp.163.com # TODO: 修改为你的 SMTP 服务器
     port: 465
     username: ${MAIL_USERNAME:wenjie_xuee2025@163.com} # TODO: 设置真实账号
-    password: ${MAIL_PASSWORD:KXuVfqwmifTX2Ebv} # TODO: 设置真实密码/授权码
+    password: ${MAIL_PASSWORD:XXX} # TODO: 设置真实密码/授权码
     properties:
       mail:
         smtp:
@@ -76,7 +76,7 @@ file:
 deepseek:
   base-url: https://api.deepseek.com/v1
   api-path: /chat/completions
-  api-key: ${DEEPSEEK_API_KEY:sk-f45d6f456f5243b2a721c25cbb093b0b}
+  api-key: ${DEEPSEEK_API_KEY:sk-XXX}
   model: deepseek-chat
   max-prompt-chars: 3000
 
